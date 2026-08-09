@@ -10,6 +10,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import InterviewSetup from "./pages/InterviewSetup";
 import InterviewRoom from "./pages/InterviewRoom";
 import InterviewResults from "./pages/InterviewResults";
+import InterviewHistory from "./pages/InterviewHistory";
 
 import useAuthStore from "./store/authStore";
 
@@ -57,6 +58,14 @@ function App() {
         element={
           <ProtectedRoute>
             <InterviewResults />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/history"
+        element={
+          <ProtectedRoute>
+            <InterviewHistory />
           </ProtectedRoute>
         }
       />
