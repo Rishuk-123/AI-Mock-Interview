@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import InterviewSetup from "./pages/InterviewSetup";
 import InterviewRoom from "./pages/InterviewRoom";
+import InterviewResults from "./pages/InterviewResults";
 
 import useAuthStore from "./store/authStore";
 
@@ -48,6 +49,14 @@ function App() {
         element={
           <ProtectedRoute>
             <InterviewRoom />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/interview/:id/results"
+        element={
+          <ProtectedRoute>
+            <InterviewResults />
           </ProtectedRoute>
         }
       />
