@@ -11,6 +11,7 @@ import InterviewSetup from "./pages/InterviewSetup";
 import InterviewRoom from "./pages/InterviewRoom";
 import InterviewResults from "./pages/InterviewResults";
 import InterviewHistory from "./pages/InterviewHistory";
+import Profile from "./pages/Profile";
 
 import useAuthStore from "./store/authStore";
 
@@ -42,6 +43,14 @@ function App() {
         element={
           <ProtectedRoute>
             <InterviewSetup />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />
