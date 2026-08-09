@@ -18,6 +18,7 @@ function InterviewRoom() {
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [evaluation, setEvaluation] = useState(null);
 
   useEffect(() => {
     const fetchInterview = async () => {
@@ -70,11 +71,27 @@ function InterviewRoom() {
     try {
       setSubmitting(true);
 
+      // 1. Save answer
       await api.post(`/interviews/${id}/answer`, {
         questionIndex: currentQuestion,
         answer: answer.trim(),
       });
 
+      // 2. Ask Groq to evaluate answer
+      const evaluationResponse = await api.post(
+        `/interviews/${id}/evaluate`,
+        {
+          questionIndex: currentQuestion,
+        }
+      );
+
+      const evaluation =
+        evaluationResponse.data.evaluation;
+
+      // 3. Store evaluation in React state
+      setEvaluation(evaluation);
+
+      // 4. Update current question locally
       setInterview((previous) => {
         if (!previous) {
           return previous;
@@ -87,6 +104,11 @@ function InterviewRoom() {
         updatedQuestions[currentQuestion] = {
           ...updatedQuestions[currentQuestion],
           answer: answer.trim(),
+          score: evaluation.score,
+          feedback: evaluation.feedback,
+          strengths: evaluation.strengths,
+          weaknesses: evaluation.weaknesses,
+          improvement: evaluation.improvement,
         };
 
         return {
@@ -95,23 +117,38 @@ function InterviewRoom() {
         };
       });
 
-      toast.success("Answer saved");
+      toast.success(
+        `AI Score: ${evaluation.score}/100`
+      );
 
       setAnswer("");
 
       const questions = interview?.questions || [];
 
       if (currentQuestion < questions.length - 1) {
-        setCurrentQuestion((previous) => previous + 1);
+        // Wait so the user can see the evaluation
+        // before moving to the next question.
+        setTimeout(() => {
+          setEvaluation(null);
+          setCurrentQuestion(
+            (previous) => previous + 1
+          );
+        }, 2500);
       } else {
-        await finishInterview();
+        // Last question
+        setTimeout(async () => {
+          await finishInterview();
+        }, 2500);
       }
     } catch (error) {
-      console.error("Submit answer error:", error);
+      console.error(
+        "Submit/evaluation error:",
+        error
+      );
 
       toast.error(
         error.response?.data?.message ||
-          "Failed to save answer"
+          "Failed to evaluate answer"
       );
     } finally {
       setSubmitting(false);
@@ -127,8 +164,12 @@ function InterviewRoom() {
       toast.success("Interview completed");
 
       setInterview(response.data.interview);
+      setEvaluation(null);
     } catch (error) {
-      console.error("Finish interview error:", error);
+      console.error(
+        "Finish interview error:",
+        error
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -171,7 +212,9 @@ function InterviewRoom() {
             No interview questions available.
           </p>
 
-          <Button onClick={() => navigate("/interview")}>
+          <Button
+            onClick={() => navigate("/interview")}
+          >
             Back to Interview Setup
           </Button>
         </div>
@@ -203,6 +246,7 @@ function InterviewRoom() {
     <MainLayout>
       <div className="mx-auto w-full max-w-5xl">
 
+        {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-900">
             AI Interview
@@ -217,6 +261,7 @@ function InterviewRoom() {
           </p>
         </div>
 
+        {/* Completed Interview */}
         {isCompleted ? (
           <Card className="p-8">
             <div className="text-center">
@@ -244,7 +289,9 @@ function InterviewRoom() {
 
               <Button
                 className="mt-8"
-                onClick={() => navigate("/dashboard")}
+                onClick={() =>
+                  navigate("/dashboard")
+                }
               >
                 Back to Dashboard
               </Button>
@@ -254,6 +301,7 @@ function InterviewRoom() {
         ) : (
           <div className="grid gap-6 md:grid-cols-3">
 
+            {/* Main Interview Card */}
             <Card className="p-6 md:col-span-2">
 
               <div className="mb-6 flex items-center justify-between">
@@ -275,6 +323,7 @@ function InterviewRoom() {
 
               </div>
 
+              {/* Question */}
               <div className="rounded-xl bg-slate-50 p-6">
 
                 <p className="text-lg leading-8 text-slate-800">
@@ -283,6 +332,7 @@ function InterviewRoom() {
 
               </div>
 
+              {/* Answer */}
               <div className="mt-6">
 
                 <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -296,11 +346,13 @@ function InterviewRoom() {
                   }
                   placeholder="Type your answer here..."
                   rows={8}
-                  className="w-full resize-none rounded-lg border border-slate-300 p-4 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  disabled={submitting}
+                  className="w-full resize-none rounded-lg border border-slate-300 p-4 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-100"
                 />
 
               </div>
 
+              {/* Button */}
               <div className="mt-4 flex justify-end">
 
                 <Button
@@ -308,7 +360,7 @@ function InterviewRoom() {
                   disabled={submitting}
                 >
                   {submitting
-                    ? "Saving..."
+                    ? "AI is evaluating..."
                     : isLastQuestion
                     ? "Finish"
                     : "Next Question"}
@@ -316,8 +368,102 @@ function InterviewRoom() {
 
               </div>
 
+              {/* AI Evaluation */}
+              {evaluation && (
+                <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-6">
+
+                  <div className="mb-5 flex items-center justify-between">
+
+                    <h2 className="text-lg font-bold text-slate-900">
+                      AI Evaluation
+                    </h2>
+
+                    <div className="rounded-full bg-white px-4 py-2 text-lg font-bold text-blue-600 shadow-sm">
+                      {evaluation.score}/100
+                    </div>
+
+                  </div>
+
+                  {/* Feedback */}
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">
+                      Feedback
+                    </p>
+
+                    <p className="mt-1 leading-6 text-slate-600">
+                      {evaluation.feedback}
+                    </p>
+                  </div>
+
+                  {/* Strengths */}
+                  {evaluation.strengths?.length > 0 && (
+                    <div className="mt-5">
+
+                      <p className="text-sm font-semibold text-slate-800">
+                        Strengths
+                      </p>
+
+                      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+                        {evaluation.strengths.map(
+                          (strength, index) => (
+                            <li key={index}>
+                              {strength}
+                            </li>
+                          )
+                        )}
+                      </ul>
+
+                    </div>
+                  )}
+
+                  {/* Weaknesses */}
+                  {evaluation.weaknesses?.length > 0 && (
+                    <div className="mt-5">
+
+                      <p className="text-sm font-semibold text-slate-800">
+                        Areas to Improve
+                      </p>
+
+                      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+                        {evaluation.weaknesses.map(
+                          (weakness, index) => (
+                            <li key={index}>
+                              {weakness}
+                            </li>
+                          )
+                        )}
+                      </ul>
+
+                    </div>
+                  )}
+
+                  {/* Improvement */}
+                  {evaluation.improvement && (
+                    <div className="mt-5">
+
+                      <p className="text-sm font-semibold text-slate-800">
+                        Improvement Suggestion
+                      </p>
+
+                      <p className="mt-1 leading-6 text-slate-600">
+                        {evaluation.improvement}
+                      </p>
+
+                    </div>
+                  )}
+
+                  {!isLastQuestion && (
+                    <p className="mt-5 text-center text-xs text-slate-500">
+                      Moving to the next question...
+                    </p>
+                  )}
+
+                </div>
+              )}
+
             </Card>
 
+            {/* Interview Details */}
             <Card className="h-fit p-6">
 
               <h2 className="mb-5 text-lg font-semibold text-slate-900">

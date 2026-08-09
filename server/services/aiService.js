@@ -1,3 +1,9 @@
+import Groq from "groq-sdk";
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
 const evaluateAnswer = async ({
   question,
   answer,
@@ -14,51 +20,136 @@ const evaluateAnswer = async ({
         "The question was not answered.",
       ],
       improvement:
-        "Provide a clear and relevant answer to the question.",
+        "Provide a clear and relevant answer.",
     };
   }
 
-  const answerLength = answer.trim().length;
+  const prompt = `
+You are an expert interviewer evaluating a candidate's answer.
 
-  let score = 50;
+Job Role: ${role}
+Interview Type: ${interviewType}
+Difficulty: ${difficulty}
 
-  if (answerLength >= 100) {
-    score += 10;
+Question:
+${question}
+
+Candidate Answer:
+${answer}
+
+Evaluate the candidate based on:
+
+1. Relevance
+2. Technical correctness
+3. Clarity
+4. Depth
+5. Communication
+6. Practical understanding
+
+Return ONLY valid JSON.
+
+Use exactly this structure:
+
+{
+  "score": 0,
+  "feedback": "Short overall evaluation",
+  "strengths": [
+    "strength 1",
+    "strength 2"
+  ],
+  "weaknesses": [
+    "weakness 1",
+    "weakness 2"
+  ],
+  "improvement": "Specific advice for improving the answer"
+}
+
+Rules:
+- score must be an integer from 0 to 100
+- feedback should be concise
+- provide 2 to 3 strengths
+- provide 2 to 3 weaknesses
+- provide specific improvement advice
+- do not include markdown
+- return only JSON
+`;
+
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a professional technical interviewer. Return only valid JSON.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+
+      model: "llama-3.3-70b-versatile",
+
+      temperature: 0.2,
+
+      max_tokens: 500,
+    });
+
+    const text =
+      completion.choices?.[0]?.message?.content?.trim();
+
+    if (!text) {
+      throw new Error("Empty AI response");
+    }
+
+    let evaluation;
+
+    try {
+      evaluation = JSON.parse(text);
+    } catch (parseError) {
+      console.error("AI JSON parsing error:", parseError);
+      console.error("AI response:", text);
+
+      throw new Error(
+        "AI returned invalid JSON"
+      );
+    }
+
+    return {
+      score: Math.max(
+        0,
+        Math.min(
+          100,
+          Number(evaluation.score) || 0
+        )
+      ),
+
+      feedback:
+        evaluation.feedback || "",
+
+      strengths:
+        Array.isArray(evaluation.strengths)
+          ? evaluation.strengths
+          : [],
+
+      weaknesses:
+        Array.isArray(evaluation.weaknesses)
+          ? evaluation.weaknesses
+          : [],
+
+      improvement:
+        evaluation.improvement || "",
+    };
+  } catch (error) {
+    console.error(
+      "Groq evaluation error:",
+      error
+    );
+
+    throw new Error(
+      "AI evaluation failed"
+    );
   }
-
-  if (answerLength >= 200) {
-    score += 10;
-  }
-
-  if (answerLength >= 400) {
-    score += 10;
-  }
-
-  if (answerLength < 50) {
-    score -= 20;
-  }
-
-  score = Math.max(0, Math.min(100, score));
-
-  return {
-    score,
-
-    feedback:
-      "Your answer addresses the question. Try to provide more specific examples and explain your reasoning clearly.",
-
-    strengths: [
-      "Relevant response",
-      "Clear communication",
-    ],
-
-    weaknesses: [
-      "Could provide more specific examples",
-      "Could explain the reasoning in more depth",
-    ],
-
-    improvement:
-      "Use a specific project or real-world example and explain the problem, your approach, and the result.",
-  };
 };
 
 export default evaluateAnswer;
