@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
-
+import Resume from "./pages/Resume";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -75,6 +75,14 @@ function App() {
         element={
           <ProtectedRoute>
             <InterviewHistory />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/resume"
+        element={
+          <ProtectedRoute>
+            <Resume />
           </ProtectedRoute>
         }
       />
