@@ -25,9 +25,7 @@ function InterviewResults() {
           response.data.interview;
 
         if (!interviewData) {
-          throw new Error(
-            "Interview not found"
-          );
+          throw new Error("Interview not found");
         }
 
         setInterview(interviewData);
@@ -68,6 +66,7 @@ function InterviewResults() {
   }
 
   const questions = interview.questions || [];
+  const overallScore = interview.overallScore || 0;
 
   return (
     <MainLayout>
@@ -80,7 +79,7 @@ function InterviewResults() {
           </h1>
 
           <p className="mt-2 text-slate-500">
-            {interview.role}
+            {interview.role || "Interview"}
             {interview.company
               ? ` at ${interview.company}`
               : ""}
@@ -98,7 +97,7 @@ function InterviewResults() {
             <div className="mx-auto mt-4 flex h-36 w-36 items-center justify-center rounded-full bg-blue-50">
               <div>
                 <p className="text-4xl font-bold text-blue-600">
-                  {interview.overallScore}
+                  {overallScore}
                 </p>
 
                 <p className="text-sm text-slate-500">
@@ -108,9 +107,9 @@ function InterviewResults() {
             </div>
 
             <p className="mt-4 text-slate-600">
-              {interview.overallScore >= 80
+              {overallScore >= 80
                 ? "Excellent performance!"
-                : interview.overallScore >= 60
+                : overallScore >= 60
                 ? "Good performance. Keep improving!"
                 : "Keep practicing and improving!"}
             </p>
@@ -118,7 +117,7 @@ function InterviewResults() {
           </div>
         </Card>
 
-        {/* Interview Information */}
+        {/* Interview Summary */}
         <Card className="mb-6 p-6">
 
           <h2 className="mb-5 text-xl font-semibold text-slate-900">
@@ -133,7 +132,7 @@ function InterviewResults() {
               </p>
 
               <p className="mt-1 font-medium text-slate-900">
-                {interview.role}
+                {interview.role || "Not specified"}
               </p>
             </div>
 
@@ -154,7 +153,8 @@ function InterviewResults() {
               </p>
 
               <p className="mt-1 font-medium text-slate-900">
-                {interview.interviewType}
+                {interview.interviewType ||
+                  "Not specified"}
               </p>
             </div>
 
@@ -164,11 +164,13 @@ function InterviewResults() {
               </p>
 
               <p className="mt-1 font-medium text-slate-900">
-                {interview.difficulty}
+                {interview.difficulty ||
+                  "Not specified"}
               </p>
             </div>
 
           </div>
+
         </Card>
 
         {/* Question Results */}
@@ -178,119 +180,133 @@ function InterviewResults() {
             Question-by-Question Evaluation
           </h2>
 
-          {questions.map((item, index) => (
-            <Card
-              key={item._id || index}
-              className="p-6"
-            >
-
-              {/* Question Header */}
-              <div className="flex items-start justify-between gap-4">
-
-                <div>
-                  <p className="text-sm font-medium text-slate-500">
-                    Question {index + 1}
-                  </p>
-
-                  <p className="mt-2 text-lg font-semibold text-slate-900">
-                    {item.question}
-                  </p>
-                </div>
-
-                <div className="shrink-0 rounded-full bg-blue-50 px-4 py-2 font-bold text-blue-600">
-                  {item.score || 0}/100
-                </div>
-
-              </div>
-
-              {/* Candidate Answer */}
-              <div className="mt-6 rounded-lg bg-slate-50 p-5">
-
-                <p className="text-sm font-semibold text-slate-700">
-                  Your Answer
-                </p>
-
-                <p className="mt-2 leading-7 text-slate-600">
-                  {item.answer ||
-                    "No answer provided"}
-                </p>
-
-              </div>
-
-              {/* AI Feedback */}
-              {item.feedback && (
-                <div className="mt-5">
-
-                  <p className="text-sm font-semibold text-slate-800">
-                    AI Feedback
-                  </p>
-
-                  <p className="mt-2 leading-7 text-slate-600">
-                    {item.feedback}
-                  </p>
-
-                </div>
-              )}
-
-              {/* Strengths */}
-              {item.strengths?.length > 0 && (
-                <div className="mt-5">
-
-                  <p className="text-sm font-semibold text-slate-800">
-                    Strengths
-                  </p>
-
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
-                    {item.strengths.map(
-                      (strength, strengthIndex) => (
-                        <li key={strengthIndex}>
-                          {strength}
-                        </li>
-                      )
-                    )}
-                  </ul>
-
-                </div>
-              )}
-
-              {/* Weaknesses */}
-              {item.weaknesses?.length > 0 && (
-                <div className="mt-5">
-
-                  <p className="text-sm font-semibold text-slate-800">
-                    Areas to Improve
-                  </p>
-
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
-                    {item.weaknesses.map(
-                      (weakness, weaknessIndex) => (
-                        <li key={weaknessIndex}>
-                          {weakness}
-                        </li>
-                      )
-                    )}
-                  </ul>
-
-                </div>
-              )}
-
-              {/* Improvement */}
-              {item.improvement && (
-                <div className="mt-5">
-
-                  <p className="text-sm font-semibold text-slate-800">
-                    Improvement Suggestion
-                  </p>
-
-                  <p className="mt-2 leading-7 text-slate-600">
-                    {item.improvement}
-                  </p>
-
-                </div>
-              )}
-
+          {questions.length === 0 ? (
+            <Card className="p-6">
+              <p className="text-center text-slate-500">
+                No questions found for this interview.
+              </p>
             </Card>
-          ))}
+          ) : (
+            questions.map((item, index) => (
+
+              <Card
+                key={item._id || index}
+                className="p-6"
+              >
+
+                {/* Question Header */}
+                <div className="flex items-start justify-between gap-4">
+
+                  <div>
+                    <p className="text-sm font-medium text-slate-500">
+                      Question {index + 1}
+                    </p>
+
+                    <p className="mt-2 text-lg font-semibold text-slate-900">
+                      {item.question}
+                    </p>
+                  </div>
+
+                  <div className="shrink-0 rounded-full bg-blue-50 px-4 py-2 font-bold text-blue-600">
+                    {item.score || 0}/100
+                  </div>
+
+                </div>
+
+                {/* Candidate Answer */}
+                <div className="mt-6 rounded-lg bg-slate-50 p-5">
+
+                  <p className="text-sm font-semibold text-slate-700">
+                    Your Answer
+                  </p>
+
+                  <p className="mt-2 leading-7 text-slate-600">
+                    {item.answer ||
+                      "No answer provided"}
+                  </p>
+
+                </div>
+
+                {/* AI Feedback */}
+                {item.feedback && (
+                  <div className="mt-5">
+
+                    <p className="text-sm font-semibold text-slate-800">
+                      AI Feedback
+                    </p>
+
+                    <p className="mt-2 leading-7 text-slate-600">
+                      {item.feedback}
+                    </p>
+
+                  </div>
+                )}
+
+                {/* Strengths */}
+                {item.strengths?.length > 0 && (
+                  <div className="mt-5">
+
+                    <p className="text-sm font-semibold text-slate-800">
+                      Strengths
+                    </p>
+
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+
+                      {item.strengths.map(
+                        (strength, strengthIndex) => (
+                          <li key={strengthIndex}>
+                            {strength}
+                          </li>
+                        )
+                      )}
+
+                    </ul>
+
+                  </div>
+                )}
+
+                {/* Weaknesses */}
+                {item.weaknesses?.length > 0 && (
+                  <div className="mt-5">
+
+                    <p className="text-sm font-semibold text-slate-800">
+                      Areas to Improve
+                    </p>
+
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+
+                      {item.weaknesses.map(
+                        (weakness, weaknessIndex) => (
+                          <li key={weaknessIndex}>
+                            {weakness}
+                          </li>
+                        )
+                      )}
+
+                    </ul>
+
+                  </div>
+                )}
+
+                {/* Improvement */}
+                {item.improvement && (
+                  <div className="mt-5">
+
+                    <p className="text-sm font-semibold text-slate-800">
+                      Improvement Suggestion
+                    </p>
+
+                    <p className="mt-2 leading-7 text-slate-600">
+                      {item.improvement}
+                    </p>
+
+                  </div>
+                )}
+
+              </Card>
+
+            ))
+          )}
 
         </div>
 
