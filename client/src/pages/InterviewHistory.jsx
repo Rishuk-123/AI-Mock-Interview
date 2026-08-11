@@ -18,6 +18,11 @@ function InterviewHistory() {
       try {
         const response = await api.get("/interviews");
 
+        console.log(
+          "Interview history:",
+          response.data
+        );
+
         setInterviews(
           response.data.interviews || []
         );
@@ -49,6 +54,18 @@ function InterviewHistory() {
     }
 
     return "bg-yellow-50 text-yellow-600";
+  };
+
+  const getStatusText = (status) => {
+    if (status === "in-progress") {
+      return "In Progress";
+    }
+
+    if (status === "completed") {
+      return "Completed";
+    }
+
+    return "Scheduled";
   };
 
   const getScoreStyle = (score) => {
@@ -119,118 +136,129 @@ function InterviewHistory() {
         ) : (
           <div className="space-y-4">
 
-            {interviews.map((interview) => (
-              <Card
-                key={interview._id}
-                className="p-6"
-              >
+            {interviews.map((interview) => {
+              const score =
+                interview.overallScore || 0;
 
-                <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+              return (
+                <Card
+                  key={interview._id}
+                  className="p-6"
+                >
+                  <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
 
-                  {/* Interview Info */}
-                  <div className="min-w-0">
+                    {/* Interview Information */}
+                    <div className="min-w-0">
 
-                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
 
-                      <h2 className="text-lg font-semibold text-slate-900">
-                        {interview.role}
-                      </h2>
+                        <h2 className="text-lg font-semibold text-slate-900">
+                          {interview.role ||
+                            "Interview"}
+                        </h2>
 
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusStyle(
-                          interview.status
-                        )}`}
-                      >
-                        {interview.status}
-                      </span>
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusStyle(
+                            interview.status
+                          )}`}
+                        >
+                          {getStatusText(
+                            interview.status
+                          )}
+                        </span>
 
-                    </div>
+                      </div>
 
-                    <p className="mt-1 text-sm text-slate-500">
-                      {interview.company ||
-                        "Company not specified"}
-                    </p>
-
-                    <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-500">
-
-                      <span>
-                        Type:{" "}
-                        <strong className="font-medium text-slate-700">
-                          {interview.interviewType}
-                        </strong>
-                      </span>
-
-                      <span>
-                        Difficulty:{" "}
-                        <strong className="font-medium text-slate-700">
-                          {interview.difficulty}
-                        </strong>
-                      </span>
-
-                      <span>
-                        {new Date(
-                          interview.createdAt
-                        ).toLocaleDateString()}
-                      </span>
-
-                    </div>
-
-                  </div>
-
-                  {/* Score + Button */}
-                  <div className="flex shrink-0 items-center gap-6">
-
-                    <div className="text-center">
-
-                      <p className="text-xs text-slate-500">
-                        Score
+                      <p className="mt-1 text-sm text-slate-500">
+                        {interview.company ||
+                          "Company not specified"}
                       </p>
 
-                      <p
-                        className={`mt-1 text-2xl font-bold ${getScoreStyle(
-                          interview.overallScore || 0
-                        )}`}
+                      <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-500">
+
+                        <span>
+                          Type:{" "}
+                          <strong className="font-medium text-slate-700">
+                            {interview.interviewType ||
+                              "Not specified"}
+                          </strong>
+                        </span>
+
+                        <span>
+                          Difficulty:{" "}
+                          <strong className="font-medium text-slate-700">
+                            {interview.difficulty ||
+                              "Not specified"}
+                          </strong>
+                        </span>
+
+                        <span>
+                          {interview.createdAt
+                            ? new Date(
+                                interview.createdAt
+                              ).toLocaleDateString()
+                            : "Date unavailable"}
+                        </span>
+
+                      </div>
+
+                    </div>
+
+                    {/* Score */}
+                    <div className="flex shrink-0 items-center gap-6">
+
+                      <div className="text-center">
+
+                        <p className="text-xs text-slate-500">
+                          Score
+                        </p>
+
+                        <p
+                          className={`mt-1 text-2xl font-bold ${getScoreStyle(
+                            score
+                          )}`}
+                        >
+                          {interview.status ===
+                          "completed"
+                            ? score
+                            : "--"}
+                        </p>
+
+                        <p className="text-xs text-slate-400">
+                          / 100
+                        </p>
+
+                      </div>
+
+                      {/* Action */}
+                      <Button
+                        onClick={() => {
+                          if (
+                            interview.status ===
+                            "completed"
+                          ) {
+                            navigate(
+                              `/interview/${interview._id}/results`
+                            );
+                          } else {
+                            navigate(
+                              `/interview/${interview._id}`
+                            );
+                          }
+                        }}
                       >
                         {interview.status ===
                         "completed"
-                          ? interview.overallScore
-                          : "--"}
-                      </p>
-
-                      <p className="text-xs text-slate-400">
-                        / 100
-                      </p>
+                          ? "View Results"
+                          : "Continue"}
+                      </Button>
 
                     </div>
 
-                    <Button
-                      onClick={() => {
-                        if (
-                          interview.status ===
-                          "completed"
-                        ) {
-                          navigate(
-                            `/interview/${interview._id}/results`
-                          );
-                        } else {
-                          navigate(
-                            `/interview/${interview._id}`
-                          );
-                        }
-                      }}
-                    >
-                      {interview.status ===
-                      "completed"
-                        ? "View Results"
-                        : "Continue"}
-                    </Button>
-
                   </div>
-
-                </div>
-
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
 
           </div>
         )}
