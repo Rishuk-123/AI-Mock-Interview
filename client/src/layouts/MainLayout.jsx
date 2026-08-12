@@ -4,20 +4,19 @@ import Navbar from "../components/Navbar";
 function MainLayout({ children }) {
   return (
     <div className="min-h-screen bg-slate-50">
+
       <Sidebar />
 
-      <div
-        style={{
-          marginLeft: "280px",
-          minHeight: "100vh",
-        }}
-      >
+      <div className="min-h-screen pl-[250px]">
+
         <Navbar />
 
-        <main className="p-8">
+        <main className="w-full px-6 py-6 lg:px-8">
           {children}
         </main>
+
       </div>
+
     </div>
   );
 }

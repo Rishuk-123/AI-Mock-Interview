@@ -16,4 +16,16 @@ body,
 body {
   font-family: Inter, sans-serif;
   background-color: #f8fafc;
+  color: #0f172a;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
 }
