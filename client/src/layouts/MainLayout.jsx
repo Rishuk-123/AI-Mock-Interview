@@ -6,13 +6,11 @@ function MainLayout({ children }) {
     <div className="min-h-screen bg-slate-50">
       <Sidebar />
 
-      <div className="min-h-screen pl-[280px]">
+      <div className="min-h-screen pl-[250px]">
         <Navbar />
 
-        <main className="min-w-0 p-6 sm:p-8">
-          <div className="mx-auto w-full max-w-[1600px]">
-            {children}
-          </div>
+        <main className="w-full min-w-0 px-6 py-6 lg:px-8">
+          {children}
         </main>
       </div>
     </div>

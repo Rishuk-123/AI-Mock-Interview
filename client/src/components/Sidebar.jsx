@@ -53,9 +53,8 @@ function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-[250px] flex-col border-r border-slate-200 bg-white">
 
-      {/* Logo */}
+      {/* Logo / Brand */}
       <div className="flex h-[72px] shrink-0 items-center border-b border-slate-100 px-5">
-
         <div className="flex items-center gap-3">
 
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
@@ -73,7 +72,6 @@ function Sidebar() {
           </div>
 
         </div>
-
       </div>
 
       {/* Navigation */}
@@ -126,7 +124,7 @@ function Sidebar() {
 
       </nav>
 
-      {/* Bottom Section */}
+      {/* Logout */}
       <div className="shrink-0 border-t border-slate-100 p-3">
 
         <button
