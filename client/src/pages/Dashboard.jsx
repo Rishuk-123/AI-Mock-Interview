@@ -7,6 +7,7 @@ import {
   ArrowRight,
   BarChart3,
   Target,
+  ChevronRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -26,7 +27,6 @@ function Dashboard() {
     const fetchInterviews = async () => {
       try {
         const response = await api.get("/interviews");
-
         setInterviews(response.data.interviews || []);
       } catch (error) {
         console.error("Dashboard interviews error:", error);
@@ -43,16 +43,15 @@ function Dashboard() {
     fetchInterviews();
   }, []);
 
-  // --------------------------------
-  // Statistics
-  // --------------------------------
+  /* =========================
+     STATISTICS
+  ========================= */
 
   const completedInterviews = interviews.filter(
     (interview) => interview.status === "completed"
   );
 
   const totalInterviews = interviews.length;
-
   const completedCount = completedInterviews.length;
 
   const averageScore =
@@ -116,9 +115,9 @@ function Dashboard() {
     },
   ];
 
-  // --------------------------------
-  // Loading
-  // --------------------------------
+  /* =========================
+     LOADING
+  ========================= */
 
   if (loading) {
     return (
@@ -136,33 +135,39 @@ function Dashboard() {
     );
   }
 
-  // --------------------------------
-  // Dashboard
-  // --------------------------------
+  /* =========================
+     DASHBOARD
+  ========================= */
 
   return (
     <MainLayout>
-      <div className="w-full min-w-0 space-y-7">
+      <div className="mx-auto w-full max-w-7xl">
 
-        {/* Header */}
-        <section>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        {/* =========================
+            HEADER
+        ========================= */}
+
+        <section className="mb-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+
             <div>
-              <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-blue-600">
-                Dashboard
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+                AI Interview Platform
               </p>
 
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                Welcome back
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                Welcome back 👋
               </h1>
 
-              <p className="mt-2 text-sm text-slate-500 sm:text-base">
-                Continue your interview preparation and improve your performance.
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
+                Continue your interview preparation and
+                improve your performance with AI-powered
+                practice.
               </p>
             </div>
 
             <Button
-              className="shrink-0"
+              className="w-full sm:w-auto"
               onClick={() => navigate("/interview")}
             >
               Start Interview
@@ -171,11 +176,15 @@ function Dashboard() {
                 size={17}
               />
             </Button>
+
           </div>
         </section>
 
-        {/* Statistics */}
-        <section className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {/* =========================
+            STATISTICS
+        ========================= */}
+
+        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
           {statistics.map((item) => {
             const Icon = item.icon;
@@ -183,16 +192,16 @@ function Dashboard() {
             return (
               <Card
                 key={item.title}
-                className="min-w-0 border-slate-200 p-5 shadow-sm transition-shadow hover:shadow-md"
+                className="p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center justify-between gap-4">
 
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-slate-500">
                       {item.title}
                     </p>
 
-                    <p className="mt-2 truncate text-3xl font-bold tracking-tight text-slate-900">
+                    <p className="mt-2 text-3xl font-bold text-slate-900">
                       {item.value}
                     </p>
 
@@ -201,8 +210,8 @@ function Dashboard() {
                     </p>
                   </div>
 
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                    <Icon size={21} />
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <Icon size={22} />
                   </div>
 
                 </div>
@@ -212,11 +221,15 @@ function Dashboard() {
 
         </section>
 
-        {/* Performance + Start Interview */}
-        <section className="grid min-w-0 gap-5 lg:grid-cols-3">
+        {/* =========================
+            PERFORMANCE + CTA
+        ========================= */}
 
-          {/* Performance */}
-          <Card className="min-w-0 border-slate-200 p-6 shadow-sm lg:col-span-2">
+        <section className="mb-8 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
+
+          {/* PERFORMANCE */}
+
+          <Card className="p-6 shadow-sm">
 
             <div className="flex items-start justify-between gap-4">
 
@@ -233,12 +246,12 @@ function Dashboard() {
                 </div>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Your scores from recent completed interviews
+                  Your recent interview performance
                 </p>
               </div>
 
               {completedCount > 0 && (
-                <div className="hidden rounded-lg bg-blue-50 px-3 py-2 text-right sm:block">
+                <div className="shrink-0 rounded-xl bg-blue-50 px-4 py-2 text-right">
                   <p className="text-xs text-slate-500">
                     Average
                   </p>
@@ -251,6 +264,8 @@ function Dashboard() {
 
             </div>
 
+            {/* CHART */}
+
             {completedInterviews.length === 0 ? (
               <div className="mt-6 flex h-64 flex-col items-center justify-center rounded-xl bg-slate-50 text-center">
 
@@ -262,51 +277,66 @@ function Dashboard() {
                   No performance data yet
                 </p>
 
-                <p className="mt-1 max-w-sm text-xs text-slate-400">
-                  Complete your first interview to see your performance here.
+                <p className="mt-1 max-w-sm px-4 text-xs text-slate-400">
+                  Complete your first interview to see
+                  your performance here.
                 </p>
 
               </div>
             ) : (
               <div className="mt-6">
 
-                <div className="flex h-64 min-w-0 items-end gap-3 overflow-hidden rounded-xl bg-slate-50 px-4 py-5 sm:gap-5 sm:px-6">
+                <div className="relative h-64 overflow-hidden rounded-xl bg-slate-50 px-5 py-5">
 
-                  {completedInterviews
-                    .slice(0, 8)
-                    .reverse()
-                    .map((interview, index) => {
-                      const score =
-                        interview.overallScore || 0;
+                  {/* GRID */}
 
-                      return (
-                        <div
-                          key={interview._id}
-                          className="flex min-w-0 flex-1 flex-col items-center justify-end"
-                        >
+                  <div className="absolute left-5 right-5 top-5 border-t border-slate-200" />
 
+                  <div className="absolute left-5 right-5 top-1/2 border-t border-slate-200" />
+
+                  <div className="absolute bottom-10 left-5 right-5 border-t border-slate-200" />
+
+                  {/* BARS */}
+
+                  <div className="relative flex h-full items-end gap-3 sm:gap-6">
+
+                    {completedInterviews
+                      .slice(0, 6)
+                      .reverse()
+                      .map((interview, index) => {
+
+                        const score =
+                          interview.overallScore || 0;
+
+                        return (
                           <div
-                            className="w-full max-w-[55px] rounded-t-lg bg-blue-500 transition-all hover:bg-blue-600"
-                            style={{
-                              height: `${Math.max(
-                                score * 2,
-                                8
-                              )}px`,
-                            }}
-                            title={`${score}%`}
-                          />
+                            key={interview._id}
+                            className="flex min-w-0 flex-1 flex-col items-center justify-end"
+                          >
 
-                          <p className="mt-2 text-xs font-semibold text-slate-600">
-                            {score}%
-                          </p>
+                            <span className="mb-2 text-xs font-semibold text-slate-600">
+                              {score}%
+                            </span>
 
-                          <p className="mt-1 text-[10px] text-slate-400">
-                            #{index + 1}
-                          </p>
+                            <div
+                              className="w-full max-w-[60px] rounded-t-lg bg-blue-500 transition-all hover:bg-blue-600"
+                              style={{
+                                height: `${Math.max(
+                                  score * 1.8,
+                                  8
+                                )}px`,
+                              }}
+                            />
 
-                        </div>
-                      );
-                    })}
+                            <span className="mt-2 text-[10px] text-slate-400">
+                              #{index + 1}
+                            </span>
+
+                          </div>
+                        );
+                      })}
+
+                  </div>
 
                 </div>
 
@@ -315,43 +345,58 @@ function Dashboard() {
 
           </Card>
 
-          {/* Start Interview */}
-          <Card className="flex min-w-0 flex-col border-slate-200 p-6 shadow-sm">
+          {/* START INTERVIEW */}
 
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-              <Target size={21} />
+          <Card className="flex flex-col p-6 shadow-sm">
+
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <Target size={22} />
             </div>
 
-            <h2 className="mt-5 text-lg font-semibold text-slate-900">
+            <h2 className="mt-5 text-xl font-semibold text-slate-900">
               Start a New Interview
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Practice with an AI interviewer and receive detailed feedback on your performance.
+              Practice with an AI interviewer and receive
+              detailed feedback on your performance.
             </p>
 
-            <div className="mt-auto pt-6">
-              <Button
-                className="w-full"
-                onClick={() => navigate("/interview")}
-              >
-                Start Interview
+            <div className="mt-6 rounded-xl bg-slate-50 p-4">
 
-                <ArrowRight
-                  className="ml-2"
-                  size={17}
-                />
-              </Button>
+              <p className="text-sm font-medium text-slate-700">
+                Ready to practice?
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Choose your role, company, interview type
+                and difficulty.
+              </p>
+
             </div>
+
+            <Button
+              className="mt-6 w-full"
+              onClick={() => navigate("/interview")}
+            >
+              Start Interview
+              <ArrowRight
+                className="ml-2"
+                size={17}
+              />
+            </Button>
 
           </Card>
 
         </section>
 
-        {/* Recent Interviews */}
-        <section className="min-w-0">
+        {/* =========================
+            RECENT INTERVIEWS
+        ========================= */}
 
-          <Card className="min-w-0 overflow-hidden border-slate-200 p-6 shadow-sm">
+        <section>
+
+          <Card className="p-6 shadow-sm">
 
             <div className="flex items-center justify-between gap-4">
 
@@ -369,15 +414,17 @@ function Dashboard() {
                 <button
                   type="button"
                   onClick={() => navigate("/history")}
-                  className="shrink-0 text-sm font-semibold text-blue-600 transition hover:text-blue-700"
+                  className="flex shrink-0 items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700"
                 >
                   View all
+                  <ChevronRight size={16} />
                 </button>
               )}
 
             </div>
 
             {interviews.length === 0 ? (
+
               <div className="mt-6 rounded-xl bg-slate-50 p-10 text-center">
 
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
@@ -389,7 +436,8 @@ function Dashboard() {
                 </p>
 
                 <p className="mt-1 text-xs text-slate-400">
-                  Start your first mock interview to begin practicing.
+                  Start your first mock interview to begin
+                  practicing.
                 </p>
 
                 <Button
@@ -400,32 +448,37 @@ function Dashboard() {
                 </Button>
 
               </div>
-            ) : (
-              <div className="mt-6 w-full min-w-0 overflow-x-auto">
 
-                <table className="w-full min-w-[650px] text-left">
+            ) : (
+
+              <div className="mt-6 overflow-x-auto">
+
+                <table className="w-full text-left">
 
                   <thead>
                     <tr className="border-b border-slate-200 text-xs font-semibold uppercase tracking-wide text-slate-400">
 
-                      <th className="pb-3">
+                      <th className="px-3 pb-3">
                         Role
                       </th>
 
-                      <th className="pb-3">
+                      <th className="px-3 pb-3">
                         Type
                       </th>
 
-                      <th className="pb-3">
+                      <th className="px-3 pb-3">
                         Status
                       </th>
 
-                      <th className="pb-3">
+                      <th className="px-3 pb-3">
                         Score
                       </th>
 
-                      <th className="pb-3">
+                      <th className="px-3 pb-3">
                         Date
+                      </th>
+
+                      <th className="px-3 pb-3">
                       </th>
 
                     </tr>
@@ -436,10 +489,12 @@ function Dashboard() {
                     {interviews
                       .slice(0, 5)
                       .map((interview) => (
+
                         <tr
                           key={interview._id}
                           className="cursor-pointer border-b border-slate-100 transition hover:bg-slate-50"
                           onClick={() => {
+
                             if (
                               interview.status ===
                               "completed"
@@ -452,18 +507,29 @@ function Dashboard() {
                                 `/interview/${interview._id}`
                               );
                             }
+
                           }}
                         >
 
-                          <td className="py-4 font-medium text-slate-900">
-                            {interview.role}
+                          <td className="px-3 py-4">
+
+                            <p className="font-medium text-slate-900">
+                              {interview.role}
+                            </p>
+
+                            {interview.company && (
+                              <p className="mt-1 text-xs text-slate-400">
+                                {interview.company}
+                              </p>
+                            )}
+
                           </td>
 
-                          <td className="py-4 text-sm text-slate-500">
+                          <td className="px-3 py-4 text-sm text-slate-500">
                             {interview.interviewType}
                           </td>
 
-                          <td className="py-4 text-sm">
+                          <td className="px-3 py-4">
 
                             <span
                               className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
@@ -481,20 +547,41 @@ function Dashboard() {
 
                           </td>
 
-                          <td className="py-4 text-sm font-semibold text-slate-700">
-                            {interview.status ===
-                            "completed"
-                              ? `${interview.overallScore || 0}%`
-                              : "--"}
+                          <td className="px-3 py-4 text-sm font-semibold">
+
+                            <span
+                              className={
+                                interview.status ===
+                                "completed"
+                                  ? "text-slate-700"
+                                  : "text-slate-400"
+                              }
+                            >
+                              {interview.status ===
+                              "completed"
+                                ? `${interview.overallScore || 0}%`
+                                : "--"}
+                            </span>
+
                           </td>
 
-                          <td className="py-4 text-sm text-slate-500">
+                          <td className="px-3 py-4 text-sm text-slate-500">
                             {new Date(
                               interview.createdAt
                             ).toLocaleDateString()}
                           </td>
 
+                          <td className="px-3 py-4 text-right">
+
+                            <ChevronRight
+                              size={18}
+                              className="ml-auto text-slate-400"
+                            />
+
+                          </td>
+
                         </tr>
+
                       ))}
 
                   </tbody>
@@ -502,6 +589,7 @@ function Dashboard() {
                 </table>
 
               </div>
+
             )}
 
           </Card>
