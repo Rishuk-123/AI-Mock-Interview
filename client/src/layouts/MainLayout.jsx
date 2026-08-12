@@ -3,20 +3,34 @@ import Navbar from "../components/Navbar";
 
 function MainLayout({ children }) {
   return (
-    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
-      <Sidebar />
-
+    <div className="min-h-screen bg-slate-50">
       <div
-        className="min-h-screen"
         style={{
-          marginLeft: "250px",
+          display: "grid",
+          gridTemplateColumns: "280px minmax(0, 1fr)",
+          minHeight: "100vh",
         }}
       >
-        <Navbar />
+        <Sidebar />
 
-        <main className="w-full min-w-0 p-6 lg:p-8">
-          {children}
-        </main>
+        <div
+          style={{
+            minWidth: 0,
+            minHeight: "100vh",
+          }}
+        >
+          <Navbar />
+
+          <main
+            style={{
+              padding: "32px",
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );

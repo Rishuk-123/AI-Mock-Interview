@@ -23,6 +23,10 @@ function Dashboard() {
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // =========================
+  // FETCH INTERVIEWS
+  // =========================
+
   useEffect(() => {
     const fetchInterviews = async () => {
       try {
@@ -43,9 +47,9 @@ function Dashboard() {
     fetchInterviews();
   }, []);
 
-  /* =========================
-     STATISTICS
-  ========================= */
+  // =========================
+  // STATISTICS
+  // =========================
 
   const completedInterviews = interviews.filter(
     (interview) => interview.status === "completed"
@@ -115,16 +119,16 @@ function Dashboard() {
     },
   ];
 
-  /* =========================
-     LOADING
-  ========================= */
+  // =========================
+  // LOADING
+  // =========================
 
   if (loading) {
     return (
       <MainLayout>
         <div className="flex min-h-[500px] items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
+            <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
 
             <p className="text-sm font-medium text-slate-500">
               Loading dashboard...
@@ -135,22 +139,22 @@ function Dashboard() {
     );
   }
 
-  /* =========================
-     DASHBOARD
-  ========================= */
+  // =========================
+  // DASHBOARD
+  // =========================
 
   return (
     <MainLayout>
-      <div className="mx-auto w-full max-w-7xl">
+      <div className="w-full min-w-0 max-w-none overflow-hidden">
 
         {/* =========================
             HEADER
         ========================= */}
 
-        <section className="mb-8">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <section className="mb-7">
+          <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
 
-            <div>
+            <div className="min-w-0">
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
                 AI Interview Platform
               </p>
@@ -167,7 +171,7 @@ function Dashboard() {
             </div>
 
             <Button
-              className="w-full sm:w-auto"
+              className="w-full shrink-0 sm:w-auto"
               onClick={() => navigate("/interview")}
             >
               Start Interview
@@ -184,7 +188,7 @@ function Dashboard() {
             STATISTICS
         ========================= */}
 
-        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="mb-7 grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
           {statistics.map((item) => {
             const Icon = item.icon;
@@ -192,12 +196,12 @@ function Dashboard() {
             return (
               <Card
                 key={item.title}
-                className="p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                className="min-w-0 p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
               >
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex min-w-0 items-center justify-between gap-3">
 
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-500">
+                    <p className="truncate text-sm font-medium text-slate-500">
                       {item.title}
                     </p>
 
@@ -205,7 +209,7 @@ function Dashboard() {
                       {item.value}
                     </p>
 
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="mt-1 truncate text-xs text-slate-400">
                       {item.description}
                     </p>
                   </div>
@@ -225,24 +229,26 @@ function Dashboard() {
             PERFORMANCE + CTA
         ========================= */}
 
-        <section className="mb-8 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
+        <section className="mb-7 grid w-full min-w-0 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
 
           {/* PERFORMANCE */}
 
-          <Card className="p-6 shadow-sm">
+          <Card className="min-w-0 overflow-hidden p-6 shadow-sm">
 
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 items-start justify-between gap-4">
 
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
+
                   <BarChart3
                     size={20}
-                    className="text-blue-600"
+                    className="shrink-0 text-blue-600"
                   />
 
-                  <h2 className="text-lg font-semibold text-slate-900">
+                  <h2 className="truncate text-lg font-semibold text-slate-900">
                     Performance Overview
                   </h2>
+
                 </div>
 
                 <p className="mt-1 text-sm text-slate-500">
@@ -252,6 +258,7 @@ function Dashboard() {
 
               {completedCount > 0 && (
                 <div className="shrink-0 rounded-xl bg-blue-50 px-4 py-2 text-right">
+
                   <p className="text-xs text-slate-500">
                     Average
                   </p>
@@ -259,6 +266,7 @@ function Dashboard() {
                   <p className="text-lg font-bold text-blue-600">
                     {averageScore}%
                   </p>
+
                 </div>
               )}
 
@@ -284,9 +292,9 @@ function Dashboard() {
 
               </div>
             ) : (
-              <div className="mt-6">
+              <div className="mt-6 min-w-0">
 
-                <div className="relative h-64 overflow-hidden rounded-xl bg-slate-50 px-5 py-5">
+                <div className="relative h-64 w-full overflow-hidden rounded-xl bg-slate-50 px-5 py-5">
 
                   {/* GRID */}
 
@@ -298,13 +306,12 @@ function Dashboard() {
 
                   {/* BARS */}
 
-                  <div className="relative flex h-full items-end gap-3 sm:gap-6">
+                  <div className="relative flex h-full min-w-0 items-end justify-around gap-2">
 
                     {completedInterviews
                       .slice(0, 6)
                       .reverse()
                       .map((interview, index) => {
-
                         const score =
                           interview.overallScore || 0;
 
@@ -319,7 +326,7 @@ function Dashboard() {
                             </span>
 
                             <div
-                              className="w-full max-w-[60px] rounded-t-lg bg-blue-500 transition-all hover:bg-blue-600"
+                              className="w-full max-w-[56px] rounded-t-lg bg-blue-500 transition-all hover:bg-blue-600"
                               style={{
                                 height: `${Math.max(
                                   score * 1.8,
@@ -337,9 +344,7 @@ function Dashboard() {
                       })}
 
                   </div>
-
                 </div>
-
               </div>
             )}
 
@@ -347,9 +352,9 @@ function Dashboard() {
 
           {/* START INTERVIEW */}
 
-          <Card className="flex flex-col p-6 shadow-sm">
+          <Card className="flex min-w-0 flex-col p-6 shadow-sm">
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
               <Target size={22} />
             </div>
 
@@ -362,7 +367,7 @@ function Dashboard() {
               detailed feedback on your performance.
             </p>
 
-            <div className="mt-6 rounded-xl bg-slate-50 p-4">
+            <div className="mt-5 rounded-xl bg-slate-50 p-4">
 
               <p className="text-sm font-medium text-slate-700">
                 Ready to practice?
@@ -376,7 +381,7 @@ function Dashboard() {
             </div>
 
             <Button
-              className="mt-6 w-full"
+              className="mt-5 w-full"
               onClick={() => navigate("/interview")}
             >
               Start Interview
@@ -394,13 +399,13 @@ function Dashboard() {
             RECENT INTERVIEWS
         ========================= */}
 
-        <section>
+        <section className="w-full min-w-0">
 
-          <Card className="p-6 shadow-sm">
+          <Card className="min-w-0 overflow-hidden p-6 shadow-sm">
 
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center justify-between gap-4">
 
-              <div>
+              <div className="min-w-0">
                 <h2 className="text-lg font-semibold text-slate-900">
                   Recent Interviews
                 </h2>
@@ -451,9 +456,9 @@ function Dashboard() {
 
             ) : (
 
-              <div className="mt-6 overflow-x-auto">
+              <div className="mt-6 w-full overflow-x-auto">
 
-                <table className="w-full text-left">
+                <table className="w-full min-w-[650px] text-left">
 
                   <thead>
                     <tr className="border-b border-slate-200 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -494,7 +499,6 @@ function Dashboard() {
                           key={interview._id}
                           className="cursor-pointer border-b border-slate-100 transition hover:bg-slate-50"
                           onClick={() => {
-
                             if (
                               interview.status ===
                               "completed"
@@ -507,7 +511,6 @@ function Dashboard() {
                                 `/interview/${interview._id}`
                               );
                             }
-
                           }}
                         >
 
@@ -559,7 +562,10 @@ function Dashboard() {
                             >
                               {interview.status ===
                               "completed"
-                                ? `${interview.overallScore || 0}%`
+                                ? `${
+                                    interview.overallScore ||
+                                    0
+                                  }%`
                                 : "--"}
                             </span>
 

@@ -3,6 +3,9 @@ import {
   FileText,
   Upload,
   ExternalLink,
+  CheckCircle2,
+  ShieldCheck,
+  FileCheck2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -60,9 +63,7 @@ function Resume() {
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error(
-        "Resume must be smaller than 5 MB"
-      );
+      toast.error("Resume must be smaller than 5 MB");
       event.target.value = "";
       return;
     }
@@ -81,14 +82,9 @@ function Resume() {
 
       setUser(response.data.user);
 
-      toast.success(
-        "Resume uploaded successfully"
-      );
+      toast.success("Resume uploaded successfully");
     } catch (error) {
-      console.error(
-        "Resume upload error:",
-        error
-      );
+      console.error("Resume upload error:", error);
 
       toast.error(
         error.response?.data?.message ||
@@ -112,9 +108,7 @@ function Resume() {
       const response = await fetch(user.resume);
 
       if (!response.ok) {
-        throw new Error(
-          "Unable to open resume"
-        );
+        throw new Error("Unable to open resume");
       }
 
       const blob = await response.blob();
@@ -123,8 +117,7 @@ function Resume() {
         type: "application/pdf",
       });
 
-      const pdfUrl =
-        URL.createObjectURL(pdfBlob);
+      const pdfUrl = URL.createObjectURL(pdfBlob);
 
       window.open(pdfUrl, "_blank");
 
@@ -132,10 +125,7 @@ function Resume() {
         URL.revokeObjectURL(pdfUrl);
       }, 60000);
     } catch (error) {
-      console.error(
-        "View resume error:",
-        error
-      );
+      console.error("View resume error:", error);
 
       toast.error(
         "Unable to open resume. Please try again."
@@ -148,10 +138,16 @@ function Resume() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex min-h-[400px] items-center justify-center">
-          <p className="text-slate-600">
-            Loading resume...
-          </p>
+        <div className="flex min-h-[500px] items-center justify-center">
+          <div className="text-center">
+
+            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
+
+            <p className="text-sm font-medium text-slate-600">
+              Loading resume...
+            </p>
+
+          </div>
         </div>
       </MainLayout>
     );
@@ -159,130 +155,180 @@ function Resume() {
 
   return (
     <MainLayout>
-      <div className="mx-auto w-full max-w-4xl">
+      <div className="mx-auto w-full max-w-5xl">
 
-        {/* Header */}
+        {/* ================= HEADER ================= */}
+
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">
-            Resume
+
+          <div className="mb-3 flex items-center gap-2">
+            <FileText
+              size={20}
+              className="text-blue-600"
+            />
+
+            <span className="text-sm font-bold uppercase tracking-[0.22em] text-blue-600">
+              Resume Management
+            </span>
+          </div>
+
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+            Your Resume
           </h1>
 
-          <p className="mt-2 text-slate-500">
-            Upload and manage your resume.
+          <p className="mt-2 max-w-2xl text-lg text-slate-500">
+            Upload your latest resume so you can keep your
+            profile ready for interviews.
           </p>
+
         </div>
 
-        <Card className="p-8">
+        {/* ================= MAIN CARD ================= */}
 
-          {/* Resume Icon */}
-          <div className="flex flex-col items-center text-center">
+        <Card className="overflow-hidden p-0 shadow-sm">
 
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-              <FileText size={38} />
+          {/* TOP SECTION */}
+
+          <div className="border-b border-slate-200 px-8 py-8">
+
+            <div className="flex flex-col items-center text-center">
+
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                <FileText size={38} />
+              </div>
+
+              <h2 className="mt-5 text-2xl font-bold text-slate-900">
+                {user?.resume
+                  ? "Resume uploaded"
+                  : "Upload your resume"}
+              </h2>
+
+              <p className="mt-2 max-w-lg text-sm leading-6 text-slate-500">
+                Upload your latest resume in PDF format.
+                The maximum supported file size is 5 MB.
+              </p>
+
             </div>
-
-            <h2 className="mt-5 text-xl font-semibold text-slate-900">
-              {user?.resume
-                ? "Your Resume"
-                : "Upload Your Resume"}
-            </h2>
-
-            <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-              Upload your latest resume as a PDF.
-              Maximum file size is 5 MB.
-            </p>
 
           </div>
 
-          {/* Resume Uploaded */}
+          {/* ================= UPLOADED RESUME ================= */}
+
           {user?.resume ? (
-            <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-5">
 
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="px-8 py-7">
 
-                {/* File Information */}
-                <div className="flex items-center gap-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
 
-                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-red-50 text-red-600">
-                    <FileText size={22} />
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+
+                  {/* FILE */}
+
+                  <div className="flex min-w-0 items-center gap-4">
+
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                      <FileText size={27} />
+                    </div>
+
+                    <div className="min-w-0">
+
+                      <div className="flex items-center gap-2">
+
+                        <p className="truncate font-semibold text-slate-900">
+                          Resume.pdf
+                        </p>
+
+                        <CheckCircle2
+                          size={17}
+                          className="shrink-0 text-emerald-500"
+                        />
+
+                      </div>
+
+                      <p className="mt-1 text-sm text-slate-500">
+                        PDF document • Ready to view
+                      </p>
+
+                    </div>
+
                   </div>
 
-                  <div>
-                    <p className="font-medium text-slate-900">
-                      Resume PDF
-                    </p>
+                  {/* ACTIONS */}
 
-                    <p className="text-sm text-slate-500">
-                      Your resume is uploaded
-                    </p>
-                  </div>
+                  <div className="flex shrink-0 flex-wrap gap-3">
 
-                </div>
+                    <Button
+                      type="button"
+                      onClick={handleViewResume}
+                      disabled={viewing}
+                      className="flex items-center gap-2"
+                    >
+                      <ExternalLink size={17} />
 
-                {/* Buttons */}
-                <div className="flex flex-wrap gap-2">
+                      {viewing
+                        ? "Opening..."
+                        : "View Resume"}
+                    </Button>
 
-                  {/* View Resume */}
-                  <Button
-                    type="button"
-                    onClick={handleViewResume}
-                    disabled={viewing}
-                  >
-                    <ExternalLink
-                      size={17}
-                      className="mr-2"
-                    />
+                    <label className="cursor-pointer">
 
-                    {viewing
-                      ? "Opening..."
-                      : "View Resume"}
-                  </Button>
+                      <span className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                        <Upload size={17} />
 
-                  {/* Replace Resume */}
-                  <label className="cursor-pointer">
+                        {uploading
+                          ? "Uploading..."
+                          : "Replace"}
+                      </span>
 
-                    <span className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
-                      <Upload
-                        size={17}
-                        className="mr-2"
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        onChange={handleUpload}
+                        disabled={uploading}
+                        className="hidden"
                       />
 
-                      {uploading
-                        ? "Uploading..."
-                        : "Replace"}
-                    </span>
+                    </label>
 
-                    <input
-                      type="file"
-                      accept="application/pdf"
-                      onChange={handleUpload}
-                      disabled={uploading}
-                      className="hidden"
-                    />
-
-                  </label>
+                  </div>
 
                 </div>
 
               </div>
 
             </div>
+
           ) : (
-            /* Upload Resume */
-            <div className="mt-8 flex justify-center">
 
-              <label className="cursor-pointer">
+            /* ================= UPLOAD STATE ================= */
 
-                <span className="inline-flex h-11 items-center justify-center rounded-md bg-blue-600 px-5 text-sm font-medium text-white transition hover:bg-blue-700">
-                  <Upload
-                    size={18}
-                    className="mr-2"
-                  />
+            <div className="px-8 py-8">
 
-                  {uploading
-                    ? "Uploading..."
-                    : "Upload Resume"}
-                </span>
+              <label className="block cursor-pointer">
+
+                <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center transition hover:border-blue-400 hover:bg-blue-50/40">
+
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm">
+                    <Upload size={26} />
+                  </div>
+
+                  <p className="mt-5 text-base font-semibold text-slate-900">
+                    {uploading
+                      ? "Uploading your resume..."
+                      : "Upload your resume"}
+                  </p>
+
+                  <p className="mt-2 text-sm text-slate-500">
+                    Click here to select a PDF file
+                  </p>
+
+                  <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-medium text-slate-500 shadow-sm">
+                    <FileCheck2 size={15} />
+
+                    PDF only • Maximum 5 MB
+                  </div>
+
+                </div>
 
                 <input
                   type="file"
@@ -295,18 +341,53 @@ function Resume() {
               </label>
 
             </div>
+
           )}
 
-          {/* Information */}
-          <div className="mt-8 rounded-lg bg-blue-50 p-4 text-sm text-blue-700">
+          {/* ================= INFO ================= */}
 
-            <p className="font-medium">
-              Supported format
-            </p>
+          <div className="border-t border-slate-200 bg-slate-50 px-8 py-6">
 
-            <p className="mt-1">
-              PDF only, maximum size 5 MB.
-            </p>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+
+              <div className="flex gap-3">
+
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                  <ShieldCheck size={20} />
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">
+                    Secure Resume Storage
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Your uploaded resume is associated with
+                    your account.
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="flex gap-3">
+
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                  <FileCheck2 size={20} />
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">
+                    Supported Format
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    PDF files only, with a maximum size of 5 MB.
+                  </p>
+                </div>
+
+              </div>
+
+            </div>
 
           </div>
 

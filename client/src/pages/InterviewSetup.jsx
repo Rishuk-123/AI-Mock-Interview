@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Briefcase, Building2, Brain, Gauge } from "lucide-react";
+
+import {
+  Briefcase,
+  Building2,
+  Brain,
+  Gauge,
+  Sparkles,
+} from "lucide-react";
 
 import { Card } from "../components/ui/card";
-import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
+
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 
@@ -49,7 +57,7 @@ function InterviewSetup() {
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
-        "Failed to create interview"
+          "Failed to create interview"
       );
     } finally {
       setLoading(false);
@@ -58,135 +66,291 @@ function InterviewSetup() {
 
   return (
     <MainLayout>
-      <div className="mx-auto w-full max-w-xl">
+      <div className="mx-auto w-full max-w-6xl">
 
+        {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">
+          <div className="mb-2 flex items-center gap-2">
+            <Sparkles
+              size={22}
+              className="text-blue-600"
+            />
+
+            <span className="text-sm font-bold uppercase tracking-[0.25em] text-blue-600">
+              AI Interview Practice
+            </span>
+          </div>
+
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
             Start a New Interview
           </h1>
 
-          <p className="mt-2 text-slate-500">
-            Configure your interview and get ready to practice.
+          <p className="mt-2 text-lg text-slate-500">
+            Configure your interview and practice with an AI interviewer.
           </p>
         </div>
 
-        <Card className="p-6 shadow-sm">
+        {/* Main Card */}
+        <Card className="overflow-hidden p-0 shadow-sm">
 
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-6"
-          >
+          {/* Card Header */}
+          <div className="border-b border-slate-200 px-8 py-6">
+            <div className="flex items-center gap-4">
 
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <Briefcase size={18} className="text-blue-600" />
-
-                <label className="text-sm font-medium text-slate-700">
-                  Job Role
-                </label>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <Sparkles size={24} />
               </div>
 
-              <Input
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                placeholder="e.g. Frontend Developer"
-              />
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">
+                  Interview Details
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Select the type of interview you want to practice.
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit}>
+
+            <div className="space-y-7 px-8 py-7">
+
+              {/* Job Role + Company */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+
+                {/* Job Role */}
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Briefcase
+                      size={18}
+                      className="text-blue-600"
+                    />
+
+                    <label className="text-sm font-semibold text-slate-700">
+                      Job Role{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                  </div>
+
+                  <Input
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    placeholder="e.g. Frontend Developer"
+                    className="h-12"
+                  />
+
+                  <p className="mt-2 text-xs text-slate-400">
+                    The role you are preparing for.
+                  </p>
+                </div>
+
+                {/* Company */}
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Building2
+                      size={18}
+                      className="text-blue-600"
+                    />
+
+                    <label className="text-sm font-semibold text-slate-700">
+                      Company
+                    </label>
+                  </div>
+
+                  <Input
+                    name="company"
+                    value={formData.company}
+                    onChange={handleChange}
+                    placeholder="e.g. Google, Microsoft, Amazon"
+                    className="h-12"
+                  />
+
+                  <p className="mt-2 text-xs text-slate-400">
+                    Optional — helps personalize the interview.
+                  </p>
+                </div>
+
+              </div>
+
+              {/* Interview Settings */}
+              <div>
+                <h3 className="mb-4 text-sm font-bold text-slate-800">
+                  Interview Settings
+                </h3>
+
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+
+                  {/* Interview Type */}
+                  <div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <Brain
+                        size={18}
+                        className="text-blue-600"
+                      />
+
+                      <label className="text-sm font-semibold text-slate-700">
+                        Interview Type
+                      </label>
+                    </div>
+
+                    <select
+                      name="interviewType"
+                      value={formData.interviewType}
+                      onChange={handleChange}
+                      className="h-12 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    >
+                      <option value="Technical">
+                        Technical
+                      </option>
+
+                      <option value="Behavioral">
+                        Behavioral
+                      </option>
+
+                      <option value="HR">
+                        HR
+                      </option>
+
+                      <option value="Mixed">
+                        Mixed
+                      </option>
+                    </select>
+                  </div>
+
+                  {/* Difficulty */}
+                  <div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <Gauge
+                        size={18}
+                        className="text-blue-600"
+                      />
+
+                      <label className="text-sm font-semibold text-slate-700">
+                        Difficulty
+                      </label>
+                    </div>
+
+                    <select
+                      name="difficulty"
+                      value={formData.difficulty}
+                      onChange={handleChange}
+                      className="h-12 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    >
+                      <option value="Easy">
+                        Easy
+                      </option>
+
+                      <option value="Medium">
+                        Medium
+                      </option>
+
+                      <option value="Hard">
+                        Hard
+                      </option>
+                    </select>
+                  </div>
+
+                </div>
+              </div>
+
             </div>
 
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <Building2 size={18} className="text-blue-600" />
+            {/* What You Can Expect */}
+            <div className="border-t border-slate-200 bg-slate-50 px-8 py-6">
 
-                <label className="text-sm font-medium text-slate-700">
-                  Company
-                </label>
+              <h3 className="mb-5 text-sm font-bold text-slate-800">
+                What you can expect
+              </h3>
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+
+                {/* Feature 1 */}
+                <div className="flex gap-3">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-600">
+                    ✓
+                  </div>
+
+                  <div>
+                    <p className="font-medium text-slate-800">
+                      Relevant Questions
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Questions based on your selected role.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Feature 2 */}
+                <div className="flex gap-3">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-600">
+                    ✓
+                  </div>
+
+                  <div>
+                    <p className="font-medium text-slate-800">
+                      AI Evaluation
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Receive feedback on your answers.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Feature 3 */}
+                <div className="flex gap-3">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-600">
+                    ✓
+                  </div>
+
+                  <div>
+                    <p className="font-medium text-slate-800">
+                      Performance Score
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Track your interview performance.
+                    </p>
+                  </div>
+                </div>
+
               </div>
 
-              <Input
-                name="company"
-                value={formData.company}
-                onChange={handleChange}
-                placeholder="e.g. Google"
-              />
             </div>
 
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <Brain size={18} className="text-blue-600" />
+            {/* Submit */}
+            <div className="border-t border-slate-200 px-8 py-6">
 
-                <label className="text-sm font-medium text-slate-700">
-                  Interview Type
-                </label>
-              </div>
-
-              <select
-                name="interviewType"
-                value={formData.interviewType}
-                onChange={handleChange}
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 outline-none focus:border-blue-500"
+              <Button
+                type="submit"
+                className="h-12 w-full text-base"
+                disabled={loading}
               >
-                <option value="Technical">
-                  Technical
-                </option>
+                {loading
+                  ? "Creating Interview..."
+                  : "Start Interview"}
 
-                <option value="Behavioral">
-                  Behavioral
-                </option>
+                {!loading && (
+                  <span className="ml-2 text-xl">
+                    →
+                  </span>
+                )}
+              </Button>
 
-                <option value="HR">
-                  HR
-                </option>
+              <p className="mt-3 text-center text-xs text-slate-400">
+                Your interview will be generated using your selections.
+              </p>
 
-                <option value="Mixed">
-                  Mixed
-                </option>
-              </select>
             </div>
-
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <Gauge size={18} className="text-blue-600" />
-
-                <label className="text-sm font-medium text-slate-700">
-                  Difficulty
-                </label>
-              </div>
-
-              <select
-                name="difficulty"
-                value={formData.difficulty}
-                onChange={handleChange}
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 outline-none focus:border-blue-500"
-              >
-                <option value="Easy">
-                  Easy
-                </option>
-
-                <option value="Medium">
-                  Medium
-                </option>
-
-                <option value="Hard">
-                  Hard
-                </option>
-              </select>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
-              {loading
-                ? "Creating Interview..."
-                : "Start Interview"}
-            </Button>
 
           </form>
-
         </Card>
-
       </div>
     </MainLayout>
   );
