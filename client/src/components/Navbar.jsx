@@ -16,57 +16,101 @@ function Navbar() {
     user?.fullName?.charAt(0)?.toUpperCase() || "U";
 
   return (
-    <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-200/80 bg-white/95 px-6 backdrop-blur lg:px-8">
+    <header
+      className="
+        sticky
+        top-0
+        z-30
+        flex
+        h-[72px]
+        items-center
+        justify-between
+        border-b
+        border-slate-200
+        bg-white/95
+        px-6
+        backdrop-blur
+        lg:px-8
+      "
+    >
+      {/* ================================================= */}
+      {/* LEFT */}
+      {/* ================================================= */}
 
-      {/* Left */}
       <div className="min-w-0">
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
 
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-            <Sparkles size={14} />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+            <Sparkles size={16} />
           </div>
 
-          <p className="text-sm font-semibold text-slate-900">
-            AI Mock Interview
-          </p>
+          <div className="min-w-0">
+
+            <p className="truncate text-sm font-bold text-slate-900">
+              AI Mock Interview
+            </p>
+
+            <p className="hidden text-[11px] text-slate-400 sm:block">
+              Prepare smarter. Interview better.
+            </p>
+
+          </div>
 
         </div>
 
-        <p className="mt-0.5 hidden text-xs text-slate-400 sm:block">
-          Prepare smarter. Interview better.
-        </p>
-
       </div>
 
-      {/* Right */}
+      {/* ================================================= */}
+      {/* RIGHT */}
+      {/* ================================================= */}
+
       <div className="flex items-center gap-3">
 
         {/* Notification */}
+
         <button
           type="button"
-          className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
           aria-label="Notifications"
+          className="
+            relative
+            flex
+            h-10
+            w-10
+            items-center
+            justify-center
+            rounded-xl
+            border
+            border-slate-200
+            bg-white
+            text-slate-500
+            transition-all
+            hover:border-blue-200
+            hover:bg-blue-50
+            hover:text-blue-600
+          "
         >
+
           <Bell size={18} />
 
           <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-blue-600" />
+
         </button>
 
         {/* Divider */}
-        <div className="mx-1 hidden h-8 w-px bg-slate-200 sm:block" />
+
+        <div className="hidden h-8 w-px bg-slate-200 sm:block" />
 
         {/* User */}
-        <button
-          type="button"
-          className="group flex items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-slate-50"
-        >
+
+        <div className="flex items-center gap-3">
 
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white shadow-sm">
             {initial}
           </div>
 
-          <div className="hidden text-left sm:block">
+          <div className="hidden min-w-0 sm:block">
+
             <p className="max-w-[150px] truncate text-sm font-semibold text-slate-900">
               {user?.fullName || "User"}
             </p>
@@ -74,14 +118,15 @@ function Navbar() {
             <p className="text-[11px] font-medium text-slate-400">
               Candidate
             </p>
+
           </div>
 
           <ChevronDown
             size={15}
-            className="hidden text-slate-400 transition group-hover:text-slate-600 sm:block"
+            className="hidden text-slate-400 sm:block"
           />
 
-        </button>
+        </div>
 
       </div>
 

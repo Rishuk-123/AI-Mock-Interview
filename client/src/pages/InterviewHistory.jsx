@@ -1,21 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import {
   History,
-  Search,
-  Briefcase,
-  Building2,
+  Video,
+  CheckCircle2,
+  Clock3,
+  Trophy,
+  CalendarDays,
   Brain,
   Gauge,
-  CalendarDays,
+  Building2,
   ArrowRight,
-  ClipboardCheck,
+  Play,
 } from "lucide-react";
 
-import { Card } from "../components/ui/card";
-import { Button } from "../components/ui/button";
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 
@@ -24,14 +24,11 @@ function InterviewHistory() {
 
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchInterviews = async () => {
       try {
         const response = await api.get("/interviews");
-
-        console.log("Interview history:", response.data);
 
         setInterviews(response.data.interviews || []);
       } catch (error) {
@@ -49,31 +46,68 @@ function InterviewHistory() {
     fetchInterviews();
   }, []);
 
-  const getStatusStyle = (status) => {
+  const statistics = useMemo(() => {
+    const total = interviews.length;
+
+    const completed = interviews.filter(
+      (interview) => interview.status === "completed"
+    ).length;
+
+    const inProgress = interviews.filter(
+      (interview) => interview.status === "in-progress"
+    ).length;
+
+    const completedInterviews = interviews.filter(
+      (interview) => interview.status === "completed"
+    );
+
+    const averageScore =
+      completedInterviews.length > 0
+        ? Math.round(
+            completedInterviews.reduce(
+              (sum, interview) =>
+                sum + (interview.overallScore || 0),
+              0
+            ) / completedInterviews.length
+          )
+        : 0;
+
+    return {
+      total,
+      completed,
+      inProgress,
+      averageScore,
+    };
+  }, [interviews]);
+
+  const getStatusConfig = (status) => {
     if (status === "completed") {
-      return "bg-emerald-50 text-emerald-700 border border-emerald-200";
+      return {
+        label: "Completed",
+        className:
+          "bg-emerald-50 text-emerald-700 border-emerald-200",
+        icon: CheckCircle2,
+      };
     }
 
     if (status === "in-progress") {
-      return "bg-blue-50 text-blue-700 border border-blue-200";
+      return {
+        label: "In Progress",
+        className:
+          "bg-blue-50 text-blue-700 border-blue-200",
+        icon: Clock3,
+      };
     }
 
-    return "bg-amber-50 text-amber-700 border border-amber-200";
+    return {
+      label: "Scheduled",
+      className:
+        "bg-amber-50 text-amber-700 border-amber-200",
+      icon: Clock3,
+    };
   };
 
-  const getStatusText = (status) => {
-    if (status === "in-progress") {
-      return "In Progress";
-    }
-
-    if (status === "completed") {
-      return "Completed";
-    }
-
-    return "Scheduled";
-  };
-
-  const getScoreStyle = (score) => {
+  const getScoreColor = (score) => {
     if (score >= 80) {
       return "text-emerald-600";
     }
@@ -82,31 +116,47 @@ function InterviewHistory() {
       return "text-blue-600";
     }
 
-    return "text-red-500";
+    return "text-red-600";
   };
 
-  const filteredInterviews = interviews.filter((interview) => {
-    const search = searchTerm.toLowerCase();
+  const formatDate = (date) => {
+    if (!date) {
+      return "Date unavailable";
+    }
 
-    return (
-      interview.role?.toLowerCase().includes(search) ||
-      interview.company?.toLowerCase().includes(search) ||
-      interview.interviewType?.toLowerCase().includes(search)
-    );
-  });
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const handleInterviewAction = (interview) => {
+    if (interview.status === "completed") {
+      navigate(
+        `/interview/${interview._id}/results`
+      );
+    } else {
+      navigate(`/interview/${interview._id}`);
+    }
+  };
 
   if (loading) {
     return (
       <MainLayout>
-        <div className="mx-auto w-full max-w-6xl">
-          <div className="flex min-h-[500px] items-center justify-center">
-            <div className="text-center">
-              <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
-
-              <p className="text-sm font-medium text-slate-600">
-                Loading your interview history...
-              </p>
+        <div className="flex min-h-[500px] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <History size={24} />
             </div>
+
+            <p className="mt-4 text-sm font-medium text-slate-700">
+              Loading interview history...
+            </p>
+
+            <p className="mt-1 text-xs text-slate-400">
+              Please wait a moment.
+            </p>
           </div>
         </div>
       </MainLayout>
@@ -115,257 +165,235 @@ function InterviewHistory() {
 
   return (
     <MainLayout>
-      <div className="mx-auto w-full max-w-6xl">
+      <div className="mx-auto w-full max-w-7xl">
 
         {/* ================= HEADER ================= */}
-        <div className="mb-8">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 
-          <div className="mb-3 flex items-center gap-2">
-            <History
-              size={20}
-              className="text-blue-600"
-            />
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <History
+                size={21}
+                className="text-blue-600"
+              />
 
-            <span className="text-sm font-bold uppercase tracking-[0.22em] text-blue-600">
-              Interview Tracking
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight text-slate-900">
-                Interview History
-              </h1>
-
-              <p className="mt-2 text-lg text-slate-500">
-                Review your previous interviews and track your performance.
-              </p>
+              <span className="text-sm font-bold uppercase tracking-[0.2em] text-blue-600">
+                Interview Practice
+              </span>
             </div>
 
-            <Button
-              onClick={() => navigate("/interview")}
-              className="flex items-center gap-2"
-            >
-              Start New Interview
-              <ArrowRight size={18} />
-            </Button>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              Interview History
+            </h1>
 
+            <p className="mt-2 text-base text-slate-500">
+              Review your previous interviews and track your performance.
+            </p>
           </div>
+
+          <button
+            type="button"
+            onClick={() => navigate("/interview")}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+          >
+            <Video size={18} />
+            New Interview
+            <ArrowRight size={17} />
+          </button>
+
         </div>
 
-        {/* ================= SUMMARY ================= */}
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* ================= STATISTICS ================= */}
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-          <Card className="border-slate-200 p-5 shadow-sm">
+          {/* Total */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
 
               <div>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm font-medium text-slate-500">
                   Total Interviews
                 </p>
 
-                <p className="mt-1 text-3xl font-bold text-slate-900">
-                  {interviews.length}
+                <p className="mt-2 text-3xl font-bold text-slate-900">
+                  {statistics.total}
                 </p>
               </div>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                <History size={22} />
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <History size={21} />
               </div>
 
             </div>
-          </Card>
+          </div>
 
-          <Card className="border-slate-200 p-5 shadow-sm">
+          {/* Completed */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
 
               <div>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm font-medium text-slate-500">
                   Completed
                 </p>
 
-                <p className="mt-1 text-3xl font-bold text-slate-900">
-                  {
-                    interviews.filter(
-                      (item) => item.status === "completed"
-                    ).length
-                  }
+                <p className="mt-2 text-3xl font-bold text-slate-900">
+                  {statistics.completed}
                 </p>
               </div>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                <ClipboardCheck size={22} />
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <CheckCircle2 size={21} />
               </div>
 
             </div>
-          </Card>
+          </div>
 
-          <Card className="border-slate-200 p-5 shadow-sm">
+          {/* In Progress */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
 
               <div>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm font-medium text-slate-500">
                   In Progress
                 </p>
 
-                <p className="mt-1 text-3xl font-bold text-slate-900">
-                  {
-                    interviews.filter(
-                      (item) => item.status === "in-progress"
-                    ).length
-                  }
+                <p className="mt-2 text-3xl font-bold text-slate-900">
+                  {statistics.inProgress}
                 </p>
               </div>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                <Brain size={22} />
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <Clock3 size={21} />
               </div>
 
             </div>
-          </Card>
+          </div>
+
+          {/* Average */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  Average Score
+                </p>
+
+                <p className="mt-2 text-3xl font-bold text-slate-900">
+                  {statistics.averageScore}%
+                </p>
+              </div>
+
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                <Trophy size={21} />
+              </div>
+
+            </div>
+          </div>
 
         </div>
 
-        {/* ================= SEARCH ================= */}
-        {interviews.length > 0 && (
-          <Card className="mb-6 border-slate-200 p-4 shadow-sm">
+        {/* ================= INTERVIEW LIST ================= */}
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
 
-            <div className="relative">
+          {/* List Header */}
+          <div className="flex flex-col gap-2 border-b border-slate-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
 
-              <Search
-                size={19}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              />
-
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) =>
-                  setSearchTerm(e.target.value)
-                }
-                placeholder="Search by role, company or interview type..."
-                className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
-              />
-
-            </div>
-
-          </Card>
-        )}
-
-        {/* ================= EMPTY STATE ================= */}
-        {interviews.length === 0 ? (
-
-          <Card className="border-slate-200 p-12 shadow-sm">
-
-            <div className="mx-auto max-w-md text-center">
-
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                <History size={30} />
-              </div>
-
-              <h2 className="mt-5 text-2xl font-bold text-slate-900">
-                No interviews yet
-              </h2>
-
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Start your first AI mock interview and your interview
-                results will appear here.
-              </p>
-
-              <Button
-                className="mt-6 inline-flex items-center gap-2"
-                onClick={() => navigate("/interview")}
-              >
-                Start Your First Interview
-                <ArrowRight size={18} />
-              </Button>
-
-            </div>
-
-          </Card>
-
-        ) : filteredInterviews.length === 0 ? (
-
-          <Card className="border-slate-200 p-10 shadow-sm">
-
-            <div className="text-center">
-
-              <Search
-                size={32}
-                className="mx-auto text-slate-300"
-              />
-
-              <h2 className="mt-4 text-lg font-semibold text-slate-900">
-                No matching interviews
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">
+                Recent Interviews
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                Try searching with a different role or company.
+                Your latest interview sessions
+              </p>
+            </div>
+
+            <span className="text-sm font-medium text-slate-400">
+              {interviews.length}{" "}
+              {interviews.length === 1
+                ? "interview"
+                : "interviews"}
+            </span>
+
+          </div>
+
+          {/* Empty State */}
+          {interviews.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                <Video size={28} />
+              </div>
+
+              <h3 className="mt-5 text-lg font-bold text-slate-900">
+                No interviews yet
+              </h3>
+
+              <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+                Start your first AI mock interview and your results will appear here.
               </p>
 
+              <button
+                type="button"
+                onClick={() => navigate("/interview")}
+                className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                <Play size={17} />
+                Start Interview
+              </button>
+
             </div>
+          ) : (
+            <div className="divide-y divide-slate-200">
 
-          </Card>
+              {interviews.map((interview) => {
+                const score =
+                  interview.overallScore || 0;
 
-        ) : (
+                const status =
+                  getStatusConfig(interview.status);
 
-          /* ================= INTERVIEW LIST ================= */
-          <div className="space-y-4">
+                const StatusIcon = status.icon;
 
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">
-                  Your Interviews
-                </h2>
+                return (
+                  <div
+                    key={interview._id}
+                    className="p-6 transition hover:bg-slate-50/70"
+                  >
 
-                <p className="text-sm text-slate-500">
-                  {filteredInterviews.length} interview
-                  {filteredInterviews.length !== 1 ? "s" : ""} found
-                </p>
-              </div>
-            </div>
+                    {/* Top Row */}
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
 
-            {filteredInterviews.map((interview) => {
-
-              const score = interview.overallScore || 0;
-
-              return (
-                <Card
-                  key={interview._id}
-                  className="overflow-hidden border-slate-200 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                >
-
-                  <div className="p-6">
-
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-
-                      {/* LEFT */}
+                      {/* Interview Info */}
                       <div className="min-w-0 flex-1">
 
                         <div className="flex flex-wrap items-center gap-3">
 
-                          <h2 className="text-xl font-bold text-slate-900">
+                          <h3 className="text-lg font-bold text-slate-900">
                             {interview.role || "Interview"}
-                          </h2>
+                          </h3>
 
                           <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusStyle(
-                              interview.status
-                            )}`}
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${status.className}`}
                           >
-                            {getStatusText(interview.status)}
+                            <StatusIcon size={13} />
+                            {status.label}
                           </span>
 
                         </div>
 
-                        <p className="mt-1 text-sm text-slate-500">
-                          {interview.company ||
-                            "Company not specified"}
-                        </p>
+                        {/* Company */}
+                        <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
+                          <Building2 size={16} />
 
-                        {/* DETAILS */}
-                        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                          <span>
+                            {interview.company ||
+                              "Company not specified"}
+                          </span>
+                        </div>
+
+                        {/* Details */}
+                        <div className="mt-4 flex flex-wrap items-center gap-x-7 gap-y-3">
 
                           <div className="flex items-center gap-2 text-sm text-slate-500">
                             <Brain
@@ -398,11 +426,9 @@ function InterviewHistory() {
                             />
 
                             <span>
-                              {interview.createdAt
-                                ? new Date(
-                                    interview.createdAt
-                                  ).toLocaleDateString()
-                                : "Date unavailable"}
+                              {formatDate(
+                                interview.createdAt
+                              )}
                             </span>
                           </div>
 
@@ -410,72 +436,69 @@ function InterviewHistory() {
 
                       </div>
 
-                      {/* RIGHT */}
-                      <div className="flex shrink-0 items-center justify-between gap-8 border-t border-slate-100 pt-5 lg:border-t-0 lg:pt-0">
+                      {/* Score + Action */}
+                      <div className="flex shrink-0 items-center justify-between gap-8 border-t border-slate-100 pt-4 lg:border-0 lg:pt-0">
 
-                        {/* SCORE */}
-                        <div className="text-center">
+                        {/* Score */}
+                        <div className="min-w-[90px] text-center">
 
                           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                             Score
                           </p>
 
-                          <p
-                            className={`mt-1 text-3xl font-bold ${getScoreStyle(
-                              score
-                            )}`}
-                          >
-                            {interview.status === "completed"
-                              ? score
-                              : "--"}
-                          </p>
+                          {interview.status ===
+                          "completed" ? (
+                            <>
+                              <p
+                                className={`mt-1 text-2xl font-bold ${getScoreColor(
+                                  score
+                                )}`}
+                              >
+                                {score}
+                              </p>
 
-                          {interview.status === "completed" && (
-                            <p className="text-xs text-slate-400">
-                              out of 100
+                              <p className="text-xs text-slate-400">
+                                out of 100
+                              </p>
+                            </>
+                          ) : (
+                            <p className="mt-1 text-2xl font-bold text-slate-300">
+                              --
                             </p>
                           )}
 
                         </div>
 
-                        {/* BUTTON */}
-                        <Button
-                          className="flex items-center gap-2"
-                          onClick={() => {
-                            if (
-                              interview.status ===
-                              "completed"
-                            ) {
-                              navigate(
-                                `/interview/${interview._id}/results`
-                              );
-                            } else {
-                              navigate(
-                                `/interview/${interview._id}`
-                              );
-                            }
-                          }}
+                        {/* Action */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleInterviewAction(
+                              interview
+                            )
+                          }
+                          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700"
                         >
                           {interview.status ===
                           "completed"
                             ? "View Results"
                             : "Continue"}
 
-                          <ArrowRight size={17} />
-                        </Button>
+                          <ArrowRight size={16} />
+                        </button>
 
                       </div>
 
                     </div>
 
                   </div>
+                );
+              })}
 
-                </Card>
-              );
-            })}
+            </div>
+          )}
 
-          </div>
-        )}
+        </div>
 
       </div>
     </MainLayout>

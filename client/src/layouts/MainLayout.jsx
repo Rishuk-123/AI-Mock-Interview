@@ -7,7 +7,7 @@ function MainLayout({ children }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "280px minmax(0, 1fr)",
+          gridTemplateColumns: "222px minmax(0, 1fr)",
           minHeight: "100vh",
         }}
       >

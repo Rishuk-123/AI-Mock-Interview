@@ -6,6 +6,7 @@ import {
   User,
   LogOut,
   Sparkles,
+  ChevronRight,
 } from "lucide-react";
 
 import { NavLink, useNavigate } from "react-router-dom";
@@ -51,12 +52,13 @@ function Sidebar() {
   ];
 
   return (
-    <aside className="flex min-h-screen w-full flex-col border-r border-slate-200 bg-white">
-      
+    <aside className="flex min-h-screen w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
+
       {/* Logo */}
       <div className="flex h-24 shrink-0 items-center border-b border-slate-200 px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white">
+
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
             <Sparkles size={22} />
           </div>
 
@@ -69,16 +71,19 @@ function Sidebar() {
               Smart interview practice
             </p>
           </div>
+
         </div>
       </div>
 
       {/* Workspace */}
-      <nav className="flex-1 px-4 py-6">
-        <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+      <nav className="px-3 py-5">
+
+        <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
           Workspace
         </p>
 
         <div className="space-y-1">
+
           {menuItems.map((item) => {
             const Icon = item.icon;
 
@@ -87,24 +92,48 @@ function Sidebar() {
                 key={item.name}
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
+                  `group flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium transition-all ${
                     isActive
-                      ? "bg-blue-50 text-blue-600"
+                      ? "bg-blue-600 text-white shadow-sm"
                       : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`
                 }
               >
-                <Icon size={19} />
+                {({ isActive }) => (
+                  <>
+                    <div className="flex items-center gap-3">
 
-                <span>{item.name}</span>
+                      <Icon
+                        size={19}
+                        className={
+                          isActive
+                            ? "text-white"
+                            : "text-slate-400 group-hover:text-slate-600"
+                        }
+                      />
+
+                      <span>{item.name}</span>
+
+                    </div>
+
+                    {isActive && (
+                      <ChevronRight size={17} />
+                    )}
+                  </>
+                )}
               </NavLink>
             );
           })}
+
         </div>
       </nav>
 
+      {/* Empty space */}
+      <div className="flex-1" />
+
       {/* Logout */}
-      <div className="border-t border-slate-200 p-4">
+      <div className="border-t border-slate-200 p-3">
+
         <button
           type="button"
           onClick={handleLogout}
@@ -114,7 +143,9 @@ function Sidebar() {
 
           <span>Logout</span>
         </button>
+
       </div>
+
     </aside>
   );
 }

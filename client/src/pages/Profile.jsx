@@ -1,23 +1,31 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+
 import {
   User,
   Mail,
-  Shield,
-  GraduationCap,
   Building2,
+  GraduationCap,
+  CalendarDays,
+  Code2,
+  ShieldCheck,
+  CheckCircle2,
   Pencil,
-  X,
   Save,
+  X,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 
+
 function Profile() {
   const [user, setUser] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -30,78 +38,103 @@ function Profile() {
     skills: "",
   });
 
+
+  // =========================================================
+  // FETCH PROFILE
+  // =========================================================
+
+  const fetchProfile = async () => {
+    try {
+      const response = await api.get("/users/profile");
+
+      const profile = response.data.user;
+
+      setUser(profile);
+
+      setFormData({
+        fullName: profile?.fullName || "",
+        college: profile?.college || "",
+        degree: profile?.degree || "",
+        graduationYear: profile?.graduationYear || "",
+        skills: Array.isArray(profile?.skills)
+          ? profile.skills.join(", ")
+          : profile?.skills || "",
+      });
+
+    } catch (error) {
+      console.error("Profile error:", error);
+
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to load profile"
+      );
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await api.get("/users/profile");
-
-        const userData = response.data.user;
-
-        setUser(userData);
-
-        setFormData({
-          fullName: userData?.fullName || "",
-          college: userData?.college || "",
-          degree: userData?.degree || "",
-          graduationYear:
-            userData?.graduationYear || "",
-          skills:
-            userData?.skills?.join(", ") || "",
-        });
-      } catch (error) {
-        console.error(
-          "Profile loading error:",
-          error
-        );
-
-        toast.error(
-          error.response?.data?.message ||
-            "Failed to load profile"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProfile();
   }, []);
+
+
+  // =========================================================
+  // FORM CHANGE
+  // =========================================================
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setFormData((previous) => ({
-      ...previous,
+    setFormData((prev) => ({
+      ...prev,
       [name]: value,
     }));
   };
+
+
+  // =========================================================
+  // EDIT
+  // =========================================================
 
   const handleEdit = () => {
     setFormData({
       fullName: user?.fullName || "",
       college: user?.college || "",
       degree: user?.degree || "",
-      graduationYear:
-        user?.graduationYear || "",
-      skills:
-        user?.skills?.join(", ") || "",
+      graduationYear: user?.graduationYear || "",
+      skills: Array.isArray(user?.skills)
+        ? user.skills.join(", ")
+        : user?.skills || "",
     });
 
     setEditing(true);
   };
+
+
+  // =========================================================
+  // CANCEL EDIT
+  // =========================================================
 
   const handleCancel = () => {
     setFormData({
       fullName: user?.fullName || "",
       college: user?.college || "",
       degree: user?.degree || "",
-      graduationYear:
-        user?.graduationYear || "",
-      skills:
-        user?.skills?.join(", ") || "",
+      graduationYear: user?.graduationYear || "",
+      skills: Array.isArray(user?.skills)
+        ? user.skills.join(", ")
+        : user?.skills || "",
     });
 
     setEditing(false);
   };
+
+
+  // =========================================================
+  // SAVE PROFILE
+  // =========================================================
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -114,423 +147,264 @@ function Profile() {
     try {
       setSaving(true);
 
-      const skillsArray = formData.skills
-        .split(",")
-        .map((skill) => skill.trim())
-        .filter(Boolean);
+      const payload = {
+        fullName: formData.fullName.trim(),
+        college: formData.college.trim(),
+        degree: formData.degree.trim(),
+        graduationYear: formData.graduationYear,
+        skills: formData.skills
+          .split(",")
+          .map((skill) => skill.trim())
+          .filter(Boolean),
+      };
 
       const response = await api.put(
         "/users/profile",
-        {
-          fullName: formData.fullName.trim(),
-          college: formData.college.trim(),
-          degree: formData.degree.trim(),
-          graduationYear:
-            formData.graduationYear,
-          skills: skillsArray,
-        }
+        payload
       );
 
       setUser(response.data.user);
 
-      setFormData({
-        fullName:
-          response.data.user?.fullName || "",
-        college:
-          response.data.user?.college || "",
-        degree:
-          response.data.user?.degree || "",
-        graduationYear:
-          response.data.user?.graduationYear ||
-          "",
-        skills:
-          response.data.user?.skills?.join(
-            ", "
-          ) || "",
-      });
+      toast.success("Profile updated successfully");
 
       setEditing(false);
 
-      toast.success(
-        "Profile updated successfully"
-      );
     } catch (error) {
-      console.error(
-        "Profile update error:",
-        error
-      );
+      console.error("Update profile error:", error);
 
       toast.error(
         error.response?.data?.message ||
           "Failed to update profile"
       );
+
     } finally {
       setSaving(false);
     }
   };
 
+
+  // =========================================================
+  // INITIAL
+  // =========================================================
+
+  const initial =
+    user?.fullName?.charAt(0)?.toUpperCase() || "U";
+
+
+  // =========================================================
+  // LOADING
+  // =========================================================
+
   if (loading) {
     return (
       <MainLayout>
         <div className="flex min-h-[400px] items-center justify-center">
-          <p className="text-slate-600">
-            Loading profile...
-          </p>
+          <div className="text-center">
+            <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+
+            <p className="text-sm text-slate-500">
+              Loading profile...
+            </p>
+          </div>
         </div>
       </MainLayout>
     );
   }
 
+
+  // =========================================================
+  // PAGE
+  // =========================================================
+
   return (
     <MainLayout>
-      <div className="mx-auto w-full max-w-4xl">
 
-        {/* Header */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto w-full max-w-6xl">
+
+        {/* ================================================= */}
+        {/* PAGE HEADER */}
+        {/* ================================================= */}
+
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">
+
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-blue-600">
+              Account Settings
+            </p>
+
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
               Profile
             </h1>
 
-            <p className="mt-2 text-slate-500">
-              Manage your account information.
+            <p className="mt-2 text-sm text-slate-500 sm:text-base">
+              Manage your account, education and technical skills.
             </p>
+
           </div>
 
+
           {!editing && (
-            <Button onClick={handleEdit}>
+            <Button
+              type="button"
+              onClick={handleEdit}
+              className="shrink-0"
+            >
               <Pencil
                 size={17}
                 className="mr-2"
               />
+
               Edit Profile
             </Button>
           )}
 
         </div>
 
-        {!editing ? (
-          /* =========================
-             VIEW PROFILE
-          ========================== */
-          <Card className="overflow-hidden p-0">
 
-            {/* Profile Header */}
-            <div className="flex flex-col items-center border-b border-slate-200 px-8 py-8">
+        {/* ================================================= */}
+        {/* EDIT MODE */}
+        {/* ================================================= */}
 
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                <User size={42} />
-              </div>
+        {editing ? (
 
-              <h2 className="mt-4 text-2xl font-bold text-slate-900">
-                {user?.fullName || "User"}
-              </h2>
+          <form
+            onSubmit={handleSave}
+            className="space-y-6"
+          >
 
-              <p className="mt-1 capitalize text-slate-500">
-                {user?.role || "candidate"}
-              </p>
+            {/* EDIT PERSONAL DETAILS */}
 
-            </div>
+            <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
 
-            {/* User Information */}
-            <div className="space-y-4 p-8">
+              <div className="border-b border-slate-200 px-6 py-5">
 
-              {/* Name */}
-              <div className="flex items-center gap-4 rounded-lg bg-slate-50 p-4">
+                <h2 className="text-lg font-bold text-slate-900">
+                  Edit Profile
+                </h2>
 
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <User size={21} />
-                </div>
-
-                <div>
-                  <p className="text-sm text-slate-500">
-                    Name
-                  </p>
-
-                  <p className="mt-1 font-medium text-slate-900">
-                    {user?.fullName ||
-                      "Not available"}
-                  </p>
-                </div>
+                <p className="mt-1 text-sm text-slate-500">
+                  Update your personal and academic information.
+                </p>
 
               </div>
 
-              {/* Email */}
-              <div className="flex items-center gap-4 rounded-lg bg-slate-50 p-4">
 
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <Mail size={21} />
-                </div>
+              <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-2">
+
+                {/* Full Name */}
 
                 <div>
-                  <p className="text-sm text-slate-500">
-                    Email
-                  </p>
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    Full Name
+                  </label>
 
-                  <p className="mt-1 font-medium text-slate-900">
-                    {user?.email ||
-                      "Not available"}
-                  </p>
+                  <Input
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    placeholder="Enter your full name"
+                    className="h-11"
+                  />
                 </div>
 
-              </div>
 
-              {/* Account Type */}
-              <div className="flex items-center gap-4 rounded-lg bg-slate-50 p-4">
-
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <Shield size={21} />
-                </div>
+                {/* Email */}
 
                 <div>
-                  <p className="text-sm text-slate-500">
-                    Account Type
-                  </p>
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    Email Address
+                  </label>
 
-                  <p className="mt-1 font-medium capitalize text-slate-900">
-                    {user?.role ||
-                      "candidate"}
+                  <Input
+                    value={user?.email || ""}
+                    disabled
+                    className="h-11 bg-slate-50"
+                  />
+
+                  <p className="mt-1 text-xs text-slate-400">
+                    Email cannot be changed.
                   </p>
                 </div>
 
-              </div>
 
-              {/* College */}
-              <div className="flex items-center gap-4 rounded-lg bg-slate-50 p-4">
-
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <Building2 size={21} />
-                </div>
+                {/* College */}
 
                 <div>
-                  <p className="text-sm text-slate-500">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
                     College
-                  </p>
+                  </label>
 
-                  <p className="mt-1 font-medium text-slate-900">
-                    {user?.college ||
-                      "Not specified"}
-                  </p>
+                  <Input
+                    name="college"
+                    value={formData.college}
+                    onChange={handleChange}
+                    placeholder="e.g. NIT JALANDHAR"
+                    className="h-11"
+                  />
                 </div>
 
-              </div>
 
-              {/* Degree */}
-              <div className="flex items-center gap-4 rounded-lg bg-slate-50 p-4">
-
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <GraduationCap size={21} />
-                </div>
+                {/* Degree */}
 
                 <div>
-                  <p className="text-sm text-slate-500">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Degree
-                  </p>
+                  </label>
 
-                  <p className="mt-1 font-medium text-slate-900">
-                    {user?.degree ||
-                      "Not specified"}
-                  </p>
+                  <Input
+                    name="degree"
+                    value={formData.degree}
+                    onChange={handleChange}
+                    placeholder="e.g. B.Tech"
+                    className="h-11"
+                  />
                 </div>
 
-              </div>
 
-              {/* Graduation Year */}
-              <div className="flex items-center gap-4 rounded-lg bg-slate-50 p-4">
-
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <span className="text-sm font-bold">
-                    Y
-                  </span>
-                </div>
+                {/* Graduation Year */}
 
                 <div>
-                  <p className="text-sm text-slate-500">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Graduation Year
-                  </p>
+                  </label>
 
-                  <p className="mt-1 font-medium text-slate-900">
-                    {user?.graduationYear ||
-                      "Not specified"}
+                  <Input
+                    name="graduationYear"
+                    value={formData.graduationYear}
+                    onChange={handleChange}
+                    placeholder="e.g. 2028"
+                    className="h-11"
+                  />
+                </div>
+
+
+                {/* Skills */}
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    Technical Skills
+                  </label>
+
+                  <Input
+                    name="skills"
+                    value={formData.skills}
+                    onChange={handleChange}
+                    placeholder="HTML, CSS, JavaScript, React"
+                    className="h-11"
+                  />
+
+                  <p className="mt-1 text-xs text-slate-400">
+                    Separate skills using commas.
                   </p>
                 </div>
 
               </div>
 
-              {/* Skills */}
-              <div className="rounded-lg bg-slate-50 p-4">
 
-                <p className="text-sm text-slate-500">
-                  Skills
-                </p>
+              {/* EDIT ACTIONS */}
 
-                {user?.skills?.length > 0 ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {user.skills.map(
-                      (skill, index) => (
-                        <span
-                          key={`${skill}-${index}`}
-                          className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600"
-                        >
-                          {skill}
-                        </span>
-                      )
-                    )}
-                  </div>
-                ) : (
-                  <p className="mt-1 font-medium text-slate-900">
-                    No skills added
-                  </p>
-                )}
-
-              </div>
-
-            </div>
-          </Card>
-        ) : (
-          /* =========================
-             EDIT PROFILE
-          ========================== */
-          <Card className="p-8">
-
-            <form
-              onSubmit={handleSave}
-              className="space-y-6"
-            >
-
-              {/* Full Name */}
-              <div>
-                <label
-                  htmlFor="fullName"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  Full Name
-                </label>
-
-                <input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  placeholder="Enter your full name"
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* Email - Read Only */}
-              <div>
-                <label
-                  htmlFor="email"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  Email
-                </label>
-
-                <input
-                  id="email"
-                  type="email"
-                  value={user?.email || ""}
-                  disabled
-                  className="w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500"
-                />
-
-                <p className="mt-1 text-xs text-slate-400">
-                  Email cannot be changed here.
-                </p>
-              </div>
-
-              {/* College */}
-              <div>
-                <label
-                  htmlFor="college"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  College
-                </label>
-
-                <input
-                  id="college"
-                  name="college"
-                  type="text"
-                  value={formData.college}
-                  onChange={handleChange}
-                  placeholder="Enter your college"
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* Degree */}
-              <div>
-                <label
-                  htmlFor="degree"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  Degree
-                </label>
-
-                <input
-                  id="degree"
-                  name="degree"
-                  type="text"
-                  value={formData.degree}
-                  onChange={handleChange}
-                  placeholder="e.g. B.Tech Computer Science"
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* Graduation Year */}
-              <div>
-                <label
-                  htmlFor="graduationYear"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  Graduation Year
-                </label>
-
-                <input
-                  id="graduationYear"
-                  name="graduationYear"
-                  type="number"
-                  value={
-                    formData.graduationYear
-                  }
-                  onChange={handleChange}
-                  placeholder="e.g. 2027"
-                  min="1900"
-                  max="2100"
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* Skills */}
-              <div>
-                <label
-                  htmlFor="skills"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  Skills
-                </label>
-
-                <input
-                  id="skills"
-                  name="skills"
-                  type="text"
-                  value={formData.skills}
-                  onChange={handleChange}
-                  placeholder="React, JavaScript, Node.js, MongoDB"
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-
-                <p className="mt-1 text-xs text-slate-400">
-                  Separate skills with commas.
-                </p>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:justify-end">
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 sm:flex-row sm:justify-end">
 
                 <Button
                   type="button"
@@ -542,8 +416,10 @@ function Profile() {
                     size={17}
                     className="mr-2"
                   />
+
                   Cancel
                 </Button>
+
 
                 <Button
                   type="submit"
@@ -561,14 +437,285 @@ function Profile() {
 
               </div>
 
-            </form>
+            </Card>
 
-          </Card>
+          </form>
+
+        ) : (
+
+          /* ================================================= */
+          /* VIEW MODE */
+          /* ================================================= */
+
+          <div className="space-y-6">
+
+            {/* ================================================= */}
+            {/* PROFILE SUMMARY */}
+            {/* ================================================= */}
+
+            <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+
+              <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between">
+
+                {/* User */}
+
+                <div className="flex items-center gap-5">
+
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-2xl font-bold text-white">
+                    {initial}
+                  </div>
+
+
+                  <div>
+
+                    <h2 className="text-2xl font-bold text-slate-900">
+                      {user?.fullName || "User"}
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Candidate
+                    </p>
+
+                    <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-emerald-600">
+                      <CheckCircle2 size={16} />
+                      Account Active
+                    </div>
+
+                  </div>
+
+                </div>
+
+
+                {/* Account Type */}
+
+                <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4">
+
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-slate-600 shadow-sm">
+                    <ShieldCheck size={19} />
+                  </div>
+
+
+                  <div>
+
+                    <p className="text-xs font-medium text-slate-400">
+                      Account Type
+                    </p>
+
+                    <p className="mt-1 text-sm font-bold text-slate-900">
+                      Candidate
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </Card>
+
+
+            {/* ================================================= */}
+            {/* PERSONAL + EDUCATION */}
+            {/* ================================================= */}
+
+            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+
+              {/* PERSONAL INFORMATION */}
+
+              <Card className="h-fit self-start overflow-hidden border border-slate-200 bg-white shadow-sm">
+
+                <div className="border-b border-slate-200 px-6 py-5">
+
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Personal Information
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Your basic account information.
+                  </p>
+
+                </div>
+
+
+                <div>
+
+                  <ProfileInfo
+                    icon={User}
+                    label="Full Name"
+                    value={user?.fullName}
+                  />
+
+                  <ProfileInfo
+                    icon={Mail}
+                    label="Email Address"
+                    value={user?.email}
+                  />
+
+                </div>
+
+              </Card>
+
+
+              {/* EDUCATION */}
+
+              <Card className="h-fit self-start overflow-hidden border border-slate-200 bg-white shadow-sm">
+
+                <div className="border-b border-slate-200 px-6 py-5">
+
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Education
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Your academic background.
+                  </p>
+
+                </div>
+
+
+                <div>
+
+                  <ProfileInfo
+                    icon={Building2}
+                    label="College"
+                    value={user?.college}
+                  />
+
+                  <ProfileInfo
+                    icon={GraduationCap}
+                    label="Degree"
+                    value={user?.degree}
+                  />
+
+                  <ProfileInfo
+                    icon={CalendarDays}
+                    label="Graduation Year"
+                    value={user?.graduationYear}
+                  />
+
+                </div>
+
+              </Card>
+
+            </div>
+
+
+            {/* ================================================= */}
+            {/* TECHNICAL SKILLS */}
+            {/* ================================================= */}
+
+            <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+
+              <div className="flex items-center gap-4 border-b border-slate-200 px-6 py-5">
+
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                  <Code2 size={19} />
+                </div>
+
+
+                <div>
+
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Technical Skills
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Technologies and skills in your profile.
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div className="p-6">
+
+                {user?.skills?.length > 0 ? (
+
+                  <div className="flex flex-wrap gap-2">
+
+                    {user.skills.map(
+                      (skill, index) => (
+
+                        <span
+                          key={`${skill}-${index}`}
+                          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700"
+                        >
+                          {skill}
+                        </span>
+
+                      )
+                    )}
+
+                  </div>
+
+                ) : (
+
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+
+                    <p className="text-sm text-slate-500">
+                      No technical skills added yet.
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={handleEdit}
+                      className="mt-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                    >
+                      Add skills
+                    </button>
+
+                  </div>
+
+                )}
+
+              </div>
+
+            </Card>
+
+          </div>
+
         )}
 
       </div>
+
     </MainLayout>
   );
 }
+
+
+// =============================================================
+// PROFILE INFORMATION ROW
+// =============================================================
+
+function ProfileInfo({
+  icon: Icon,
+  label,
+  value,
+}) {
+  return (
+    <div className="flex items-center gap-4 border-b border-slate-100 px-6 py-5 last:border-b-0">
+
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-500">
+        <Icon size={18} />
+      </div>
+
+
+      <div className="min-w-0">
+
+        <p className="text-xs font-medium text-slate-400">
+          {label}
+        </p>
+
+        <p className="mt-1 truncate text-sm font-semibold text-slate-900">
+          {value || "Not specified"}
+        </p>
+
+      </div>
+
+    </div>
+  );
+}
+
 
 export default Profile;

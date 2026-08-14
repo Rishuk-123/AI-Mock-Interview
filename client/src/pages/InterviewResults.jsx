@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+
 import {
   ArrowLeft,
   CheckCircle2,
@@ -9,7 +10,15 @@ import {
   Target,
   Trophy,
   TrendingUp,
+  Sparkles,
+  Briefcase,
+  Building2,
+  Brain,
+  Gauge,
+  BarChart3,
+  ArrowRight,
 } from "lucide-react";
+
 import toast from "react-hot-toast";
 
 import { Card } from "../components/ui/card";
@@ -64,11 +73,13 @@ function InterviewResults() {
       <MainLayout>
         <div className="flex min-h-[500px] items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+
+            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
 
             <p className="text-sm font-medium text-slate-600">
               Loading your results...
             </p>
+
           </div>
         </div>
       </MainLayout>
@@ -96,7 +107,7 @@ function InterviewResults() {
 
   const getScoreColor = (score) => {
     if (score >= 80) {
-      return "text-green-600";
+      return "text-emerald-600";
     }
 
     if (score >= 60) {
@@ -108,7 +119,7 @@ function InterviewResults() {
 
   const getScoreBackground = (score) => {
     if (score >= 80) {
-      return "bg-green-50";
+      return "bg-emerald-50";
     }
 
     if (score >= 60) {
@@ -122,7 +133,7 @@ function InterviewResults() {
     if (score >= 90) {
       return {
         title: "Outstanding performance!",
-        text: "You demonstrated strong knowledge and communication throughout the interview.",
+        text: "You demonstrated excellent knowledge, reasoning, and communication.",
       };
     }
 
@@ -154,148 +165,178 @@ function InterviewResults() {
     <MainLayout>
       <div className="mx-auto w-full max-w-6xl">
 
-        {/* Back Button */}
-        <button
-          onClick={() => navigate("/history")}
-          className="mb-6 flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-blue-600"
-        >
-          <ArrowLeft size={17} />
-          Back to Interview History
-        </button>
+        {/* ================================================= */}
+        {/* HEADER */}
+        {/* ================================================= */}
 
-        {/* Header */}
-        <div className="mb-8">
+        <div className="mb-7">
 
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <button
+            onClick={() => navigate("/history")}
+            className="mb-5 flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-blue-600"
+          >
+            <ArrowLeft size={17} />
+            Back to Interview History
+          </button>
+
+          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
 
             <div>
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
-                <Trophy size={14} />
-                Interview Completed
+
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                  <Trophy size={17} />
+                </div>
+
+                <span className="text-sm font-bold uppercase tracking-[0.2em] text-blue-600">
+                  Interview Completed
+                </span>
               </div>
 
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
-                Interview Results
+              <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+                Your Interview Results
               </h1>
 
-              <p className="mt-2 text-slate-500">
+              <p className="mt-2 text-lg text-slate-500">
                 {interview.role || "Interview"}
+
                 {interview.company
                   ? ` at ${interview.company}`
                   : ""}
               </p>
+
             </div>
 
             <Button
               onClick={() => navigate("/interview")}
+              className="flex items-center gap-2"
             >
               Start New Interview
+              <ArrowRight size={17} />
             </Button>
 
           </div>
 
         </div>
 
-        {/* Top Score Section */}
-        <Card className="mb-6 overflow-hidden border-0 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-0 text-white shadow-lg">
+        {/* ================================================= */}
+        {/* SCORE HERO */}
+        {/* ================================================= */}
 
-          <div className="grid md:grid-cols-2">
+        <Card className="mb-6 overflow-hidden border-0 p-0 shadow-lg">
 
-            {/* Score */}
-            <div className="flex flex-col items-center justify-center px-8 py-10 md:py-12">
+          <div className="grid bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 md:grid-cols-2">
 
-              <p className="text-sm font-medium text-blue-100">
+            {/* SCORE */}
+
+            <div className="flex flex-col items-center justify-center px-8 py-12 text-center">
+
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-blue-100">
+                <Sparkles size={17} />
                 Overall Performance
-              </p>
+              </div>
 
               <div
-                className="relative mt-5 flex h-44 w-44 items-center justify-center rounded-full"
+                className="relative flex h-48 w-48 items-center justify-center rounded-full"
                 style={{
                   background: `conic-gradient(#ffffff ${overallScore}%, rgba(255,255,255,0.18) ${overallScore}% 100%)`,
                 }}
               >
-                <div className="flex h-36 w-36 flex-col items-center justify-center rounded-full bg-blue-700">
-                  <span className="text-5xl font-bold">
+
+                <div className="flex h-40 w-40 flex-col items-center justify-center rounded-full bg-blue-700">
+
+                  <span className="text-5xl font-bold text-white">
                     {overallScore}
                   </span>
 
                   <span className="mt-1 text-sm text-blue-100">
                     out of 100
                   </span>
+
                 </div>
+
               </div>
 
-              <h2 className="mt-6 text-xl font-bold">
+              <h2 className="mt-6 text-2xl font-bold text-white">
                 {scoreMessage.title}
               </h2>
 
-              <p className="mt-2 max-w-md text-center text-sm leading-6 text-blue-100">
+              <p className="mt-2 max-w-md text-sm leading-6 text-blue-100">
                 {scoreMessage.text}
               </p>
 
             </div>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-px bg-white/10">
+            {/* STATS */}
 
-              <div className="flex flex-col justify-center p-7">
+            <div className="grid grid-cols-2 border-t border-white/10 md:border-l md:border-t-0">
+
+              <div className="flex flex-col justify-center border-b border-r border-white/10 p-7">
+
                 <Target
                   size={22}
                   className="mb-4 text-blue-200"
                 />
 
-                <p className="text-3xl font-bold">
+                <p className="text-3xl font-bold text-white">
                   {questions.length}
                 </p>
 
                 <p className="mt-1 text-sm text-blue-100">
                   Total Questions
                 </p>
+
               </div>
 
-              <div className="flex flex-col justify-center p-7">
+              <div className="flex flex-col justify-center border-b border-white/10 p-7">
+
                 <CheckCircle2
                   size={22}
-                  className="mb-4 text-green-300"
+                  className="mb-4 text-emerald-300"
                 />
 
-                <p className="text-3xl font-bold">
+                <p className="text-3xl font-bold text-white">
                   {completedQuestions}
                 </p>
 
                 <p className="mt-1 text-sm text-blue-100">
                   Answered
                 </p>
+
               </div>
 
-              <div className="flex flex-col justify-center p-7">
+              <div className="flex flex-col justify-center border-r border-white/10 p-7">
+
                 <TrendingUp
                   size={22}
-                  className="mb-4 text-green-300"
+                  className="mb-4 text-emerald-300"
                 />
 
-                <p className="text-3xl font-bold">
+                <p className="text-3xl font-bold text-white">
                   {strongAnswers}
                 </p>
 
                 <p className="mt-1 text-sm text-blue-100">
                   Strong Answers
                 </p>
+
               </div>
 
               <div className="flex flex-col justify-center p-7">
+
                 <CircleAlert
                   size={22}
                   className="mb-4 text-yellow-300"
                 />
 
-                <p className="text-3xl font-bold">
+                <p className="text-3xl font-bold text-white">
                   {improvementAnswers}
                 </p>
 
                 <p className="mt-1 text-sm text-blue-100">
                   Need Improvement
                 </p>
+
               </div>
 
             </div>
@@ -304,97 +345,223 @@ function InterviewResults() {
 
         </Card>
 
-        {/* Interview Summary */}
-        <Card className="mb-8 p-6">
+        {/* ================================================= */}
+        {/* INTERVIEW DETAILS */}
+        {/* ================================================= */}
+
+        <Card className="mb-6 border-slate-200 p-6 shadow-sm">
 
           <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-              <MessageSquareText size={20} />
+
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <MessageSquareText size={21} />
             </div>
 
             <div>
-              <h2 className="font-semibold text-slate-900">
+              <h2 className="font-bold text-slate-900">
                 Interview Summary
               </h2>
 
-              <p className="text-sm text-slate-500">
-                Details about this interview session
+              <p className="mt-1 text-sm text-slate-500">
+                Details about your interview session
               </p>
             </div>
+
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-            <div className="rounded-xl bg-slate-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Role
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+
+              <div className="flex items-center gap-2 text-slate-400">
+                <Briefcase size={16} />
+
+                <p className="text-xs font-semibold uppercase tracking-wide">
+                  Role
+                </p>
+              </div>
+
+              <p className="mt-3 font-semibold text-slate-900">
+                {interview.role || "Not specified"}
               </p>
 
-              <p className="mt-2 font-semibold text-slate-900">
-                {interview.role ||
-                  "Not specified"}
-              </p>
             </div>
 
-            <div className="rounded-xl bg-slate-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Company
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+
+              <div className="flex items-center gap-2 text-slate-400">
+                <Building2 size={16} />
+
+                <p className="text-xs font-semibold uppercase tracking-wide">
+                  Company
+                </p>
+              </div>
+
+              <p className="mt-3 font-semibold text-slate-900">
+                {interview.company || "Not specified"}
               </p>
 
-              <p className="mt-2 font-semibold text-slate-900">
-                {interview.company ||
-                  "Not specified"}
-              </p>
             </div>
 
-            <div className="rounded-xl bg-slate-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Interview Type
-              </p>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
 
-              <p className="mt-2 font-semibold text-slate-900">
+              <div className="flex items-center gap-2 text-slate-400">
+                <Brain size={16} />
+
+                <p className="text-xs font-semibold uppercase tracking-wide">
+                  Type
+                </p>
+              </div>
+
+              <p className="mt-3 font-semibold text-slate-900">
                 {interview.interviewType ||
                   "Not specified"}
               </p>
+
             </div>
 
-            <div className="rounded-xl bg-slate-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Difficulty
-              </p>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
 
-              <p className="mt-2 font-semibold text-slate-900">
+              <div className="flex items-center gap-2 text-slate-400">
+                <Gauge size={16} />
+
+                <p className="text-xs font-semibold uppercase tracking-wide">
+                  Difficulty
+                </p>
+              </div>
+
+              <p className="mt-3 font-semibold text-slate-900">
                 {interview.difficulty ||
                   "Not specified"}
               </p>
+
             </div>
 
           </div>
 
         </Card>
 
-        {/* Question Evaluation */}
+        {/* ================================================= */}
+        {/* PERFORMANCE OVERVIEW */}
+        {/* ================================================= */}
+
+        <Card className="mb-8 border-slate-200 p-6 shadow-sm">
+
+          <div className="mb-6 flex items-center gap-3">
+
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+              <BarChart3 size={21} />
+            </div>
+
+            <div>
+              <h2 className="font-bold text-slate-900">
+                Performance Overview
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Your score across individual questions
+              </p>
+            </div>
+
+          </div>
+
+          <div className="space-y-4">
+
+            {questions.map((item, index) => {
+
+              const score = item.score || 0;
+
+              return (
+                <div
+                  key={item._id || index}
+                  className="flex items-center gap-4"
+                >
+
+                  <div className="flex w-20 shrink-0 items-center gap-2">
+
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-600">
+                      {index + 1}
+                    </span>
+
+                    <span className="text-sm font-semibold text-slate-700">
+                      Q{index + 1}
+                    </span>
+
+                  </div>
+
+                  <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
+
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        score >= 80
+                          ? "bg-emerald-500"
+                          : score >= 60
+                            ? "bg-blue-500"
+                            : "bg-red-400"
+                      }`}
+                      style={{
+                        width: `${score}%`,
+                      }}
+                    />
+
+                  </div>
+
+                  <span
+                    className={`w-12 text-right text-sm font-bold ${getScoreColor(
+                      score
+                    )}`}
+                  >
+                    {score}
+                  </span>
+
+                </div>
+              );
+            })}
+
+          </div>
+
+        </Card>
+
+        {/* ================================================= */}
+        {/* QUESTION EVALUATION */}
+        {/* ================================================= */}
+
         <div className="mb-8">
 
           <div className="mb-5">
-            <h2 className="text-2xl font-bold text-slate-900">
-              Question-by-Question Evaluation
-            </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
-              Review your answers and AI-generated feedback.
-            </p>
+            <div className="flex items-center gap-3">
+
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <MessageSquareText size={21} />
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">
+                  Question-by-Question Evaluation
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Review your answers and AI-generated feedback.
+                </p>
+              </div>
+
+            </div>
+
           </div>
 
           <div className="space-y-5">
 
             {questions.length === 0 ? (
-              <Card className="p-8 text-center">
+
+              <Card className="p-10 text-center">
                 <p className="text-slate-500">
                   No questions found for this interview.
                 </p>
               </Card>
+
             ) : (
+
               questions.map((item, index) => {
 
                 const score = item.score || 0;
@@ -402,38 +569,43 @@ function InterviewResults() {
                 return (
                   <Card
                     key={item._id || index}
-                    className="overflow-hidden"
+                    className="overflow-hidden border-slate-200 p-0 shadow-sm"
                   >
 
-                    {/* Question Header */}
-                    <div className="border-b border-slate-100 bg-slate-50/70 p-6">
+                    {/* QUESTION HEADER */}
 
-                      <div className="flex items-start justify-between gap-4">
+                    <div className="border-b border-slate-200 bg-slate-50 px-6 py-5">
 
-                        <div className="flex gap-4">
+                      <div className="flex items-start justify-between gap-5">
 
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
+                        <div className="flex min-w-0 gap-4">
+
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-sm font-bold text-white">
                             {index + 1}
                           </div>
 
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                          <div className="min-w-0">
+
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
                               Question {index + 1}
                             </p>
 
                             <h3 className="mt-1 text-lg font-semibold leading-7 text-slate-900">
                               {item.question}
                             </h3>
+
                           </div>
 
                         </div>
 
-                        {/* Score */}
+                        {/* SCORE */}
+
                         <div
                           className={`shrink-0 rounded-xl px-4 py-2 text-center ${getScoreBackground(
                             score
                           )}`}
                         >
+
                           <p
                             className={`text-xl font-bold ${getScoreColor(
                               score
@@ -442,53 +614,64 @@ function InterviewResults() {
                             {score}
                           </p>
 
-                          <p className="text-[10px] font-medium text-slate-400">
+                          <p className="text-[10px] font-semibold text-slate-400">
                             / 100
                           </p>
+
                         </div>
 
                       </div>
 
                     </div>
 
-                    {/* Answer */}
+                    {/* CONTENT */}
+
                     <div className="p-6">
+
+                      {/* ANSWER */}
 
                       <div className="mb-6">
 
-                        <div className="mb-2 flex items-center gap-2">
+                        <div className="mb-3 flex items-center gap-2">
+
                           <MessageSquareText
                             size={17}
                             className="text-slate-400"
                           />
 
-                          <p className="text-sm font-semibold text-slate-800">
+                          <p className="text-sm font-bold text-slate-800">
                             Your Answer
                           </p>
+
                         </div>
 
-                        <div className="rounded-xl border border-slate-200 bg-white p-4">
+                        <div className="rounded-xl border border-slate-200 bg-white p-5">
+
                           <p className="whitespace-pre-line text-sm leading-7 text-slate-600">
                             {item.answer ||
                               "No answer provided"}
                           </p>
+
                         </div>
 
                       </div>
 
-                      {/* AI Feedback */}
+                      {/* AI FEEDBACK */}
+
                       {item.feedback && (
-                        <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50/60 p-5">
+                        <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50/70 p-5">
 
                           <div className="flex items-center gap-2">
+
                             <Lightbulb
                               size={18}
                               className="text-blue-600"
                             />
 
-                            <p className="font-semibold text-blue-900">
+                            <p className="font-bold text-blue-900">
                               AI Feedback
                             </p>
+
                           </div>
 
                           <p className="mt-3 text-sm leading-7 text-blue-900/80">
@@ -498,22 +681,26 @@ function InterviewResults() {
                         </div>
                       )}
 
-                      {/* Strengths / Weaknesses */}
+                      {/* STRENGTHS + WEAKNESSES */}
+
                       <div className="grid gap-5 md:grid-cols-2">
 
-                        {/* Strengths */}
+                        {/* STRENGTHS */}
+
                         {item.strengths?.length > 0 && (
-                          <div className="rounded-xl border border-green-100 bg-green-50/60 p-5">
+                          <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-5">
 
                             <div className="flex items-center gap-2">
+
                               <CheckCircle2
                                 size={18}
-                                className="text-green-600"
+                                className="text-emerald-600"
                               />
 
-                              <p className="font-semibold text-green-800">
+                              <p className="font-bold text-emerald-800">
                                 Strengths
                               </p>
+
                             </div>
 
                             <ul className="mt-3 space-y-2">
@@ -524,10 +711,12 @@ function InterviewResults() {
                                   strengthIndex
                                 ) => (
                                   <li
-                                    key={strengthIndex}
-                                    className="flex gap-2 text-sm leading-6 text-green-800/80"
+                                    key={
+                                      strengthIndex
+                                    }
+                                    className="flex gap-2 text-sm leading-6 text-emerald-800/80"
                                   >
-                                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+                                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
 
                                     <span>
                                       {strength}
@@ -541,19 +730,22 @@ function InterviewResults() {
                           </div>
                         )}
 
-                        {/* Weaknesses */}
+                        {/* WEAKNESSES */}
+
                         {item.weaknesses?.length > 0 && (
-                          <div className="rounded-xl border border-orange-100 bg-orange-50/60 p-5">
+                          <div className="rounded-xl border border-amber-100 bg-amber-50/60 p-5">
 
                             <div className="flex items-center gap-2">
+
                               <CircleAlert
                                 size={18}
-                                className="text-orange-600"
+                                className="text-amber-600"
                               />
 
-                              <p className="font-semibold text-orange-800">
+                              <p className="font-bold text-amber-800">
                                 Areas to Improve
                               </p>
+
                             </div>
 
                             <ul className="mt-3 space-y-2">
@@ -564,10 +756,12 @@ function InterviewResults() {
                                   weaknessIndex
                                 ) => (
                                   <li
-                                    key={weaknessIndex}
-                                    className="flex gap-2 text-sm leading-6 text-orange-800/80"
+                                    key={
+                                      weaknessIndex
+                                    }
+                                    className="flex gap-2 text-sm leading-6 text-amber-800/80"
                                   >
-                                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-orange-500" />
+                                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
 
                                     <span>
                                       {weakness}
@@ -583,19 +777,22 @@ function InterviewResults() {
 
                       </div>
 
-                      {/* Improvement */}
+                      {/* IMPROVEMENT */}
+
                       {item.improvement && (
                         <div className="mt-5 rounded-xl border border-purple-100 bg-purple-50/60 p-5">
 
                           <div className="flex items-center gap-2">
+
                             <TrendingUp
                               size={18}
                               className="text-purple-600"
                             />
 
-                            <p className="font-semibold text-purple-800">
+                            <p className="font-bold text-purple-800">
                               How to Improve
                             </p>
+
                           </div>
 
                           <p className="mt-3 text-sm leading-7 text-purple-900/80">
@@ -616,24 +813,35 @@ function InterviewResults() {
 
         </div>
 
-        {/* Bottom Actions */}
-        <div className="mb-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+        {/* ================================================= */}
+        {/* BOTTOM ACTIONS */}
+        {/* ================================================= */}
+
+        <div className="mb-8 flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:justify-between">
 
           <Button
             variant="outline"
             onClick={() => navigate("/history")}
+            className="flex items-center justify-center"
           >
             <ArrowLeft
               size={17}
               className="mr-2"
             />
+
             Interview History
           </Button>
 
           <Button
             onClick={() => navigate("/interview")}
+            className="flex items-center justify-center"
           >
             Start New Interview
+
+            <ArrowRight
+              size={17}
+              className="ml-2"
+            />
           </Button>
 
         </div>
