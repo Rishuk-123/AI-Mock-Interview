@@ -1,714 +1,493 @@
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
-
 import {
   User,
   Mail,
+  ShieldCheck,
+  Lock,
+  Calendar,
   Building2,
   GraduationCap,
-  CalendarDays,
   Code2,
-  ShieldCheck,
-  CheckCircle2,
+  MapPin,
+  Phone,
+  Globe,
+  Briefcase,
   Pencil,
-  Save,
-  X,
 } from "lucide-react";
 
-import { Card } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
+import toast from "react-hot-toast";
 
 import MainLayout from "../layouts/MainLayout";
 import api from "../services/api";
 
-
 function Profile() {
   const [user, setUser] = useState(null);
-
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const [formData, setFormData] = useState({
-    fullName: "",
-    college: "",
-    degree: "",
-    graduationYear: "",
-    skills: "",
-  });
-
-
-  // =========================================================
-  // FETCH PROFILE
-  // =========================================================
-
-  const fetchProfile = async () => {
-    try {
-      const response = await api.get("/users/profile");
-
-      const profile = response.data.user;
-
-      setUser(profile);
-
-      setFormData({
-        fullName: profile?.fullName || "",
-        college: profile?.college || "",
-        degree: profile?.degree || "",
-        graduationYear: profile?.graduationYear || "",
-        skills: Array.isArray(profile?.skills)
-          ? profile.skills.join(", ")
-          : profile?.skills || "",
-      });
-
-    } catch (error) {
-      console.error("Profile error:", error);
-
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to load profile"
-      );
-
-    } finally {
-      setLoading(false);
-    }
-  };
-
 
   useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await api.get("/users/profile");
+        setUser(response.data.user);
+      } catch (error) {
+        console.error("Profile error:", error);
+
+        toast.error(
+          error.response?.data?.message ||
+            "Failed to load profile"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchProfile();
   }, []);
-
-
-  // =========================================================
-  // FORM CHANGE
-  // =========================================================
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-
-  // =========================================================
-  // EDIT
-  // =========================================================
-
-  const handleEdit = () => {
-    setFormData({
-      fullName: user?.fullName || "",
-      college: user?.college || "",
-      degree: user?.degree || "",
-      graduationYear: user?.graduationYear || "",
-      skills: Array.isArray(user?.skills)
-        ? user.skills.join(", ")
-        : user?.skills || "",
-    });
-
-    setEditing(true);
-  };
-
-
-  // =========================================================
-  // CANCEL EDIT
-  // =========================================================
-
-  const handleCancel = () => {
-    setFormData({
-      fullName: user?.fullName || "",
-      college: user?.college || "",
-      degree: user?.degree || "",
-      graduationYear: user?.graduationYear || "",
-      skills: Array.isArray(user?.skills)
-        ? user.skills.join(", ")
-        : user?.skills || "",
-    });
-
-    setEditing(false);
-  };
-
-
-  // =========================================================
-  // SAVE PROFILE
-  // =========================================================
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-
-    if (!formData.fullName.trim()) {
-      toast.error("Full name is required");
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      const payload = {
-        fullName: formData.fullName.trim(),
-        college: formData.college.trim(),
-        degree: formData.degree.trim(),
-        graduationYear: formData.graduationYear,
-        skills: formData.skills
-          .split(",")
-          .map((skill) => skill.trim())
-          .filter(Boolean),
-      };
-
-      const response = await api.put(
-        "/users/profile",
-        payload
-      );
-
-      setUser(response.data.user);
-
-      toast.success("Profile updated successfully");
-
-      setEditing(false);
-
-    } catch (error) {
-      console.error("Update profile error:", error);
-
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to update profile"
-      );
-
-    } finally {
-      setSaving(false);
-    }
-  };
-
-
-  // =========================================================
-  // INITIAL
-  // =========================================================
-
-  const initial =
-    user?.fullName?.charAt(0)?.toUpperCase() || "U";
-
-
-  // =========================================================
-  // LOADING
-  // =========================================================
 
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex min-h-[400px] items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
-
-            <p className="text-sm text-slate-500">
-              Loading profile...
-            </p>
+        <div className="flex min-h-[500px] items-center justify-center">
+          <div className="text-sm font-medium text-slate-500">
+            Loading profile...
           </div>
         </div>
       </MainLayout>
     );
   }
 
+  const fullName = user?.fullName || "User";
 
-  // =========================================================
-  // PAGE
-  // =========================================================
+  const initial =
+    fullName.charAt(0)?.toUpperCase() || "U";
+
+  const email = user?.email || "Not available";
+
+  const accountType =
+    user?.accountType ||
+    user?.role ||
+    "Candidate";
+
+  const graduationYear =
+    user?.graduationYear || "Not available";
+
+  const college =
+    user?.college ||
+    user?.education?.college ||
+    "Not available";
+
+  const degree =
+    user?.degree ||
+    user?.education?.degree ||
+    "Not available";
+
+  const skills =
+    user?.skills ||
+    user?.technicalSkills ||
+    [];
+
+  const lastEntryDate =
+    user?.lastEntryDate ||
+    user?.lastLogin ||
+    user?.updatedAt;
+
+  const formatDate = (date) => {
+    if (!date) return "Not available";
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "Not available";
+    }
+
+    return parsedDate.toLocaleDateString();
+  };
 
   return (
     <MainLayout>
+      <div className="mx-auto w-full max-w-[1400px] px-6 py-8 lg:px-10">
 
-      <div className="mx-auto w-full max-w-6xl">
-
-        {/* ================================================= */}
-        {/* PAGE HEADER */}
-        {/* ================================================= */}
-
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        {/* =====================================================
+            PAGE HEADER
+        ====================================================== */}
+        <div className="mb-7 flex items-end justify-between gap-4">
 
           <div>
-
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-blue-600">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-blue-600">
               Account Settings
             </p>
 
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
               Profile
             </h1>
 
-            <p className="mt-2 text-sm text-slate-500 sm:text-base">
-              Manage your account, education and technical skills.
+            <p className="mt-2 text-sm text-slate-500">
+              Manage your personal, academic and technical information.
             </p>
-
           </div>
 
-
-          {!editing && (
-            <Button
-              type="button"
-              onClick={handleEdit}
-              className="shrink-0"
-            >
-              <Pencil
-                size={17}
-                className="mr-2"
-              />
-
-              Edit Profile
-            </Button>
-          )}
+          <button
+            type="button"
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+          >
+            <Pencil size={16} />
+            Edit Profile
+          </button>
 
         </div>
 
+        {/* =====================================================
+            MAIN PROFILE CARD
+        ====================================================== */}
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-        {/* ================================================= */}
-        {/* EDIT MODE */}
-        {/* ================================================= */}
+          {/* =================================================
+              PROFILE HEADER
+          ================================================== */}
+          <section className="px-7 py-7 lg:px-9">
 
-        {editing ? (
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
 
-          <form
-            onSubmit={handleSave}
-            className="space-y-6"
-          >
+              {/* User */}
+              <div className="flex items-center gap-5">
 
-            {/* EDIT PERSONAL DETAILS */}
+                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-blue-50 text-3xl font-bold text-blue-600 ring-8 ring-blue-50/60">
+                  {initial}
+                </div>
 
-            <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+                <div>
 
-              <div className="border-b border-slate-200 px-6 py-5">
+                  <h2 className="text-2xl font-bold text-slate-900">
+                    {fullName}
+                  </h2>
 
-                <h2 className="text-lg font-bold text-slate-900">
-                  Edit Profile
-                </h2>
+                  <p className="mt-1 text-sm font-medium text-slate-500">
+                    {accountType}
+                  </p>
+
+                  <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
+                    <Mail size={16} />
+                    <span>{email}</span>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Account Status */}
+              <div className="sm:text-right">
+
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Account Status
+                </p>
+
+                <div className="mt-2 flex items-center gap-2 sm:justify-end">
+
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+
+                  <span className="text-sm font-semibold text-emerald-600">
+                    Account Active
+                  </span>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </section>
+
+          <div className="border-t border-slate-200" />
+
+          {/* =================================================
+              PERSONAL INFORMATION
+          ================================================== */}
+          <section className="px-7 py-7 lg:px-9">
+
+            <div className="mb-6">
+
+              <h3 className="text-xl font-bold text-slate-900">
+                Personal Information
+              </h3>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Your basic account information.
+              </p>
+
+            </div>
+
+            <div className="grid grid-cols-1 gap-x-16 gap-y-7 md:grid-cols-2">
+
+              {/* Full Name */}
+              <InfoItem
+                icon={User}
+                label="Full Name"
+                value={fullName}
+              />
+
+              {/* Email */}
+              <InfoItem
+                icon={Mail}
+                label="Email Address"
+                value={email}
+              />
+
+              {/* Account Type */}
+              <InfoItem
+                icon={ShieldCheck}
+                label="Account Type"
+                value={accountType}
+              />
+
+              {/* Password */}
+              <div className="flex items-start gap-4">
+
+                <IconBox icon={Lock} />
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Password
+                  </p>
+
+                  <div className="mt-1 flex items-center gap-3">
+
+                    <span className="font-semibold tracking-[0.2em] text-slate-900">
+                      ••••••••
+                    </span>
+
+                    <button
+                      type="button"
+                      className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                    >
+                      Change
+                    </button>
+
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Last Entry */}
+              <InfoItem
+                icon={Calendar}
+                label="Last Entry Date"
+                value={formatDate(lastEntryDate)}
+              />
+
+            </div>
+
+          </section>
+
+          <div className="border-t border-slate-200" />
+
+          {/* =================================================
+              EDUCATION
+          ================================================== */}
+          <section className="px-7 py-7 lg:px-9">
+
+            <div className="mb-6">
+
+              <h3 className="text-xl font-bold text-slate-900">
+                Education
+              </h3>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Your academic background.
+              </p>
+
+            </div>
+
+            <div className="grid grid-cols-1 gap-7 md:grid-cols-3">
+
+              <InfoItem
+                icon={Building2}
+                label="College"
+                value={college}
+              />
+
+              <InfoItem
+                icon={GraduationCap}
+                label="Degree"
+                value={degree}
+              />
+
+              <InfoItem
+                icon={Calendar}
+                label="Graduation Year"
+                value={graduationYear}
+              />
+
+            </div>
+
+          </section>
+
+          <div className="border-t border-slate-200" />
+
+          {/* =================================================
+              TECHNICAL SKILLS
+          ================================================== */}
+          <section className="px-7 py-7 lg:px-9">
+
+            <div className="mb-5 flex items-start gap-4">
+
+              <IconBox icon={Code2} />
+
+              <div>
+
+                <h3 className="text-xl font-bold text-slate-900">
+                  Technical Skills
+                </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Update your personal and academic information.
+                  Technologies and skills in your profile.
                 </p>
 
               </div>
 
+            </div>
 
-              <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-2">
+            {skills.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
 
-                {/* Full Name */}
-
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
-                    Full Name
-                  </label>
-
-                  <Input
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    placeholder="Enter your full name"
-                    className="h-11"
-                  />
-                </div>
-
-
-                {/* Email */}
-
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
-                    Email Address
-                  </label>
-
-                  <Input
-                    value={user?.email || ""}
-                    disabled
-                    className="h-11 bg-slate-50"
-                  />
-
-                  <p className="mt-1 text-xs text-slate-400">
-                    Email cannot be changed.
-                  </p>
-                </div>
-
-
-                {/* College */}
-
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
-                    College
-                  </label>
-
-                  <Input
-                    name="college"
-                    value={formData.college}
-                    onChange={handleChange}
-                    placeholder="e.g. NIT JALANDHAR"
-                    className="h-11"
-                  />
-                </div>
-
-
-                {/* Degree */}
-
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
-                    Degree
-                  </label>
-
-                  <Input
-                    name="degree"
-                    value={formData.degree}
-                    onChange={handleChange}
-                    placeholder="e.g. B.Tech"
-                    className="h-11"
-                  />
-                </div>
-
-
-                {/* Graduation Year */}
-
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
-                    Graduation Year
-                  </label>
-
-                  <Input
-                    name="graduationYear"
-                    value={formData.graduationYear}
-                    onChange={handleChange}
-                    placeholder="e.g. 2028"
-                    className="h-11"
-                  />
-                </div>
-
-
-                {/* Skills */}
-
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
-                    Technical Skills
-                  </label>
-
-                  <Input
-                    name="skills"
-                    value={formData.skills}
-                    onChange={handleChange}
-                    placeholder="HTML, CSS, JavaScript, React"
-                    className="h-11"
-                  />
-
-                  <p className="mt-1 text-xs text-slate-400">
-                    Separate skills using commas.
-                  </p>
-                </div>
+                {skills.map((skill, index) => (
+                  <span
+                    key={`${skill}-${index}`}
+                    className="rounded-lg border border-blue-100 bg-blue-50 px-3.5 py-2 text-sm font-semibold text-blue-600"
+                  >
+                    {typeof skill === "string"
+                      ? skill
+                      : skill.name}
+                  </span>
+                ))}
 
               </div>
+            ) : (
+              <p className="text-sm text-slate-400">
+                No technical skills added yet.
+              </p>
+            )}
 
+          </section>
 
-              {/* EDIT ACTIONS */}
+          <div className="border-t border-slate-200" />
 
-              <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 sm:flex-row sm:justify-end">
+          {/* =================================================
+              ADDITIONAL INFORMATION
+          ================================================== */}
+          <section className="px-7 py-7 lg:px-9">
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={saving}
-                >
-                  <X
-                    size={17}
-                    className="mr-2"
-                  />
+            <div className="mb-6">
 
-                  Cancel
-                </Button>
+              <h3 className="text-xl font-bold text-slate-900">
+                Additional Information
+              </h3>
 
-
-                <Button
-                  type="submit"
-                  disabled={saving}
-                >
-                  <Save
-                    size={17}
-                    className="mr-2"
-                  />
-
-                  {saving
-                    ? "Saving..."
-                    : "Save Changes"}
-                </Button>
-
-              </div>
-
-            </Card>
-
-          </form>
-
-        ) : (
-
-          /* ================================================= */
-          /* VIEW MODE */
-          /* ================================================= */
-
-          <div className="space-y-6">
-
-            {/* ================================================= */}
-            {/* PROFILE SUMMARY */}
-            {/* ================================================= */}
-
-            <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
-
-              <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between">
-
-                {/* User */}
-
-                <div className="flex items-center gap-5">
-
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-2xl font-bold text-white">
-                    {initial}
-                  </div>
-
-
-                  <div>
-
-                    <h2 className="text-2xl font-bold text-slate-900">
-                      {user?.fullName || "User"}
-                    </h2>
-
-                    <p className="mt-1 text-sm text-slate-500">
-                      Candidate
-                    </p>
-
-                    <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-emerald-600">
-                      <CheckCircle2 size={16} />
-                      Account Active
-                    </div>
-
-                  </div>
-
-                </div>
-
-
-                {/* Account Type */}
-
-                <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4">
-
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-slate-600 shadow-sm">
-                    <ShieldCheck size={19} />
-                  </div>
-
-
-                  <div>
-
-                    <p className="text-xs font-medium text-slate-400">
-                      Account Type
-                    </p>
-
-                    <p className="mt-1 text-sm font-bold text-slate-900">
-                      Candidate
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            </Card>
-
-
-            {/* ================================================= */}
-            {/* PERSONAL + EDUCATION */}
-            {/* ================================================= */}
-
-            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-
-              {/* PERSONAL INFORMATION */}
-
-              <Card className="h-fit self-start overflow-hidden border border-slate-200 bg-white shadow-sm">
-
-                <div className="border-b border-slate-200 px-6 py-5">
-
-                  <h2 className="text-lg font-bold text-slate-900">
-                    Personal Information
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Your basic account information.
-                  </p>
-
-                </div>
-
-
-                <div>
-
-                  <ProfileInfo
-                    icon={User}
-                    label="Full Name"
-                    value={user?.fullName}
-                  />
-
-                  <ProfileInfo
-                    icon={Mail}
-                    label="Email Address"
-                    value={user?.email}
-                  />
-
-                </div>
-
-              </Card>
-
-
-              {/* EDUCATION */}
-
-              <Card className="h-fit self-start overflow-hidden border border-slate-200 bg-white shadow-sm">
-
-                <div className="border-b border-slate-200 px-6 py-5">
-
-                  <h2 className="text-lg font-bold text-slate-900">
-                    Education
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Your academic background.
-                  </p>
-
-                </div>
-
-
-                <div>
-
-                  <ProfileInfo
-                    icon={Building2}
-                    label="College"
-                    value={user?.college}
-                  />
-
-                  <ProfileInfo
-                    icon={GraduationCap}
-                    label="Degree"
-                    value={user?.degree}
-                  />
-
-                  <ProfileInfo
-                    icon={CalendarDays}
-                    label="Graduation Year"
-                    value={user?.graduationYear}
-                  />
-
-                </div>
-
-              </Card>
+              <p className="mt-1 text-sm text-slate-500">
+                Additional details from your profile.
+              </p>
 
             </div>
 
+            <div className="grid grid-cols-1 gap-x-16 gap-y-7 md:grid-cols-2">
 
-            {/* ================================================= */}
-            {/* TECHNICAL SKILLS */}
-            {/* ================================================= */}
+              <InfoItem
+                icon={User}
+                label="Gender"
+                value={
+                  user?.gender || "Not available"
+                }
+              />
 
-            <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+              <InfoItem
+                icon={Phone}
+                label="Phone Number"
+                value={
+                  user?.phone ||
+                  user?.phoneNumber ||
+                  "Not available"
+                }
+              />
 
-              <div className="flex items-center gap-4 border-b border-slate-200 px-6 py-5">
+              <InfoItem
+                icon={MapPin}
+                label="Location"
+                value={
+                  user?.location || "Not available"
+                }
+              />
 
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <Code2 size={19} />
-                </div>
+              <InfoItem
+                icon={Globe}
+                label="Language"
+                value={
+                  user?.language ||
+                  user?.languages ||
+                  "Not available"
+                }
+              />
 
+              <InfoItem
+                icon={Calendar}
+                label="Date of Birth"
+                value={
+                  user?.dateOfBirth
+                    ? formatDate(user.dateOfBirth)
+                    : "Not available"
+                }
+              />
 
-                <div>
+              <InfoItem
+                icon={Briefcase}
+                label="Experience Level"
+                value={
+                  user?.experienceLevel ||
+                  user?.experience ||
+                  "Fresher"
+                }
+              />
 
-                  <h2 className="text-lg font-bold text-slate-900">
-                    Technical Skills
-                  </h2>
+            </div>
 
-                  <p className="mt-1 text-sm text-slate-500">
-                    Technologies and skills in your profile.
-                  </p>
+          </section>
 
-                </div>
-
-              </div>
-
-
-              <div className="p-6">
-
-                {user?.skills?.length > 0 ? (
-
-                  <div className="flex flex-wrap gap-2">
-
-                    {user.skills.map(
-                      (skill, index) => (
-
-                        <span
-                          key={`${skill}-${index}`}
-                          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700"
-                        >
-                          {skill}
-                        </span>
-
-                      )
-                    )}
-
-                  </div>
-
-                ) : (
-
-                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-
-                    <p className="text-sm text-slate-500">
-                      No technical skills added yet.
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={handleEdit}
-                      className="mt-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
-                    >
-                      Add skills
-                    </button>
-
-                  </div>
-
-                )}
-
-              </div>
-
-            </Card>
-
-          </div>
-
-        )}
+        </div>
 
       </div>
-
     </MainLayout>
   );
 }
 
 
-// =============================================================
-// PROFILE INFORMATION ROW
-// =============================================================
+/* =========================================================
+   SMALL REUSABLE COMPONENTS
+========================================================= */
 
-function ProfileInfo({
+function IconBox({ icon: Icon }) {
+  return (
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
+      <Icon size={20} strokeWidth={1.8} />
+    </div>
+  );
+}
+
+
+function InfoItem({
   icon: Icon,
   label,
   value,
 }) {
   return (
-    <div className="flex items-center gap-4 border-b border-slate-100 px-6 py-5 last:border-b-0">
+    <div className="flex items-start gap-4">
 
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-500">
-        <Icon size={18} />
-      </div>
-
+      <IconBox icon={Icon} />
 
       <div className="min-w-0">
 
-        <p className="text-xs font-medium text-slate-400">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
           {label}
         </p>
 
-        <p className="mt-1 truncate text-sm font-semibold text-slate-900">
-          {value || "Not specified"}
+        <p className="mt-1 break-words text-sm font-semibold text-slate-900">
+          {value}
         </p>
 
       </div>
