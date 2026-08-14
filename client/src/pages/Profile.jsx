@@ -1,157 +1,119 @@
-import { useEffect, useState } from "react";
 import {
   User,
   Mail,
   ShieldCheck,
   Lock,
-  Calendar,
+  CalendarDays,
   Building2,
   GraduationCap,
   Code2,
-  MapPin,
-  Phone,
-  Globe,
-  Briefcase,
-  Pencil,
 } from "lucide-react";
 
-import toast from "react-hot-toast";
-
 import MainLayout from "../layouts/MainLayout";
-import api from "../services/api";
+import useAuthStore from "../store/authStore";
 
 function Profile() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const user = useAuthStore((state) => state.user);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await api.get("/users/profile");
-        setUser(response.data.user);
-      } catch (error) {
-        console.error("Profile error:", error);
-
-        toast.error(
-          error.response?.data?.message ||
-            "Failed to load profile"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, []);
-
-  if (loading) {
-    return (
-      <MainLayout>
-        <div className="flex min-h-[500px] items-center justify-center">
-          <div className="text-sm font-medium text-slate-500">
-            Loading profile...
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  const fullName = user?.fullName || "User";
+  const fullName = user?.fullName || "john";
+  const email = user?.email || "john123@gmail.com";
 
   const initial =
-    fullName.charAt(0)?.toUpperCase() || "U";
+    fullName?.charAt(0)?.toUpperCase() || "U";
 
-  const email = user?.email || "Not available";
-
-  const accountType =
-    user?.accountType ||
-    user?.role ||
-    "Candidate";
-
-  const graduationYear =
-    user?.graduationYear || "Not available";
-
-  const college =
-    user?.college ||
-    user?.education?.college ||
-    "Not available";
-
-  const degree =
-    user?.degree ||
-    user?.education?.degree ||
-    "Not available";
-
-  const skills =
-    user?.skills ||
-    user?.technicalSkills ||
-    [];
-
-  const lastEntryDate =
-    user?.lastEntryDate ||
-    user?.lastLogin ||
-    user?.updatedAt;
-
-  const formatDate = (date) => {
-    if (!date) return "Not available";
-
-    const parsedDate = new Date(date);
-
-    if (Number.isNaN(parsedDate.getTime())) {
-      return "Not available";
-    }
-
-    return parsedDate.toLocaleDateString();
-  };
+  const skills = [
+    "HTML",
+    "CSS",
+    "JAVASCRIPT",
+    "C++",
+    "NODE.JS",
+    "REACT",
+  ];
 
   return (
     <MainLayout>
-      <div className="mx-auto w-full max-w-[1400px] px-6 py-8 lg:px-10">
+      <div className="min-h-screen bg-slate-50">
 
-        {/* =====================================================
-            PAGE HEADER
-        ====================================================== */}
-        <div className="mb-7 flex items-end justify-between gap-4">
+        {/* ================= PAGE ================= */}
+        <div className="w-full px-5 py-6 sm:px-7 lg:px-8">
 
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-blue-600">
-              Account Settings
-            </p>
+          {/* ================= HEADER ================= */}
+          <div className="mb-5 flex items-end justify-between">
 
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              Profile
-            </h1>
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">
+                Profile
+              </h1>
 
-            <p className="mt-2 text-sm text-slate-500">
-              Manage your personal, academic and technical information.
-            </p>
+              <p className="mt-1 text-sm text-slate-500">
+                Manage your personal, academic and technical information.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="
+                flex
+                h-10
+                items-center
+                gap-2
+                rounded-lg
+                bg-blue-600
+                px-4
+                text-sm
+                font-semibold
+                text-white
+                transition
+                hover:bg-blue-700
+              "
+            >
+              <span className="text-base">✎</span>
+              Edit Profile
+            </button>
+
           </div>
 
-          <button
-            type="button"
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-          >
-            <Pencil size={16} />
-            Edit Profile
-          </button>
 
-        </div>
+          {/* ==================================================
+              MAIN PROFILE BOX
 
-        {/* =====================================================
-            MAIN PROFILE CARD
-        ====================================================== */}
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-
-          {/* =================================================
-              PROFILE HEADER
+              IMPORTANT:
+              This is the ONLY outer box.
+              It has margin on BOTH sides.
           ================================================== */}
-          <section className="px-7 py-7 lg:px-9">
+          <div
+            className="
+              w-full
+              overflow-hidden
+              rounded-[22px]
+              border
+              border-slate-200
+              bg-white
+            "
+          >
 
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            {/* ================= PROFILE HEADER ================= */}
 
-              {/* User */}
+            <div className="flex min-h-[125px] items-center justify-between px-7 py-5">
+
+              {/* Left */}
               <div className="flex items-center gap-5">
 
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-blue-50 text-3xl font-bold text-blue-600 ring-8 ring-blue-50/60">
+                <div
+                  className="
+                    flex
+                    h-[82px]
+                    w-[82px]
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-blue-50
+                    text-3xl
+                    font-semibold
+                    text-blue-600
+                  "
+                >
                   {initial}
                 </div>
 
@@ -161,26 +123,28 @@ function Profile() {
                     {fullName}
                   </h2>
 
-                  <p className="mt-1 text-sm font-medium text-slate-500">
-                    {accountType}
+                  <p className="mt-1 text-sm text-slate-500">
+                    Candidate
                   </p>
 
                   <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
-                    <Mail size={16} />
+                    <Mail size={17} />
                     <span>{email}</span>
                   </div>
 
                 </div>
+
               </div>
 
-              {/* Account Status */}
-              <div className="sm:text-right">
+
+              {/* Right */}
+              <div className="text-right">
 
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                   Account Status
                 </p>
 
-                <div className="mt-2 flex items-center gap-2 sm:justify-end">
+                <div className="mt-2 flex items-center justify-end gap-2">
 
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
 
@@ -194,260 +158,234 @@ function Profile() {
 
             </div>
 
-          </section>
 
-          <div className="border-t border-slate-200" />
+            {/* ================= DIVIDER ================= */}
 
-          {/* =================================================
-              PERSONAL INFORMATION
-          ================================================== */}
-          <section className="px-7 py-7 lg:px-9">
+            <div className="h-px bg-slate-200" />
 
-            <div className="mb-6">
 
-              <h3 className="text-xl font-bold text-slate-900">
-                Personal Information
-              </h3>
+            {/* ==================================================
+                PERSONAL INFORMATION
+            ================================================== */}
 
-              <p className="mt-1 text-sm text-slate-500">
-                Your basic account information.
-              </p>
+            <section className="px-7 py-6">
 
-            </div>
-
-            <div className="grid grid-cols-1 gap-x-16 gap-y-7 md:grid-cols-2">
-
-              {/* Full Name */}
-              <InfoItem
-                icon={User}
-                label="Full Name"
-                value={fullName}
+              <SectionTitle
+                title="Personal Information"
+                description="Your basic account information."
               />
 
-              {/* Email */}
-              <InfoItem
-                icon={Mail}
-                label="Email Address"
-                value={email}
-              />
 
-              {/* Account Type */}
-              <InfoItem
-                icon={ShieldCheck}
-                label="Account Type"
-                value={accountType}
-              />
+              <div className="mt-6 grid grid-cols-1 gap-x-20 gap-y-7 md:grid-cols-2">
 
-              {/* Password */}
-              <div className="flex items-start gap-4">
+                <Info
+                  icon={User}
+                  label="Full Name"
+                  value={fullName}
+                />
 
-                <IconBox icon={Lock} />
+                <Info
+                  icon={Mail}
+                  label="Email Address"
+                  value={email}
+                />
 
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                    Password
-                  </p>
+                <Info
+                  icon={ShieldCheck}
+                  label="Account Type"
+                  value="Candidate"
+                />
 
-                  <div className="mt-1 flex items-center gap-3">
+                <div className="flex items-center gap-4">
 
-                    <span className="font-semibold tracking-[0.2em] text-slate-900">
-                      ••••••••
-                    </span>
+                  <Icon>
+                    <Lock size={18} />
+                  </Icon>
 
-                    <button
-                      type="button"
-                      className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-                    >
-                      Change
-                    </button>
+                  <div>
+
+                    <p className="label">
+                      Password
+                    </p>
+
+                    <div className="mt-1 flex items-center gap-3">
+
+                      <span className="text-sm font-semibold tracking-[3px] text-slate-900">
+                        ••••••••
+                      </span>
+
+                      <button
+                        type="button"
+                        className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                      >
+                        Change
+                      </button>
+
+                    </div>
 
                   </div>
+
+                </div>
+
+                <Info
+                  icon={CalendarDays}
+                  label="Last Entry Date"
+                  value="11/8/2026"
+                />
+
+              </div>
+
+            </section>
+
+
+            {/* ================= DIVIDER ================= */}
+
+            <div className="h-px bg-slate-200" />
+
+
+            {/* ==================================================
+                EDUCATION
+            ================================================== */}
+
+            <section className="px-7 py-6">
+
+              <SectionTitle
+                title="Education"
+                description="Your academic background."
+              />
+
+
+              <div className="mt-6 grid grid-cols-1 gap-7 md:grid-cols-3">
+
+                <Info
+                  icon={Building2}
+                  label="College"
+                  value="NIT JALANDHAR"
+                />
+
+                <Info
+                  icon={GraduationCap}
+                  label="Degree"
+                  value="Btech"
+                />
+
+                <Info
+                  icon={CalendarDays}
+                  label="Graduation Year"
+                  value="2028"
+                />
+
+              </div>
+
+            </section>
+
+
+            {/* ================= DIVIDER ================= */}
+
+            <div className="h-px bg-slate-200" />
+
+
+            {/* ==================================================
+                TECHNICAL SKILLS
+            ================================================== */}
+
+            <section className="px-7 py-6">
+
+              <div className="flex items-center gap-4">
+
+                <Icon>
+                  <Code2 size={19} />
+                </Icon>
+
+                <div>
+
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Technical Skills
+                  </h3>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Technologies and skills in your profile.
+                  </p>
+
                 </div>
 
               </div>
 
-              {/* Last Entry */}
-              <InfoItem
-                icon={Calendar}
-                label="Last Entry Date"
-                value={formatDate(lastEntryDate)}
-              />
 
-            </div>
+              <div className="mt-5 flex flex-wrap gap-2">
 
-          </section>
-
-          <div className="border-t border-slate-200" />
-
-          {/* =================================================
-              EDUCATION
-          ================================================== */}
-          <section className="px-7 py-7 lg:px-9">
-
-            <div className="mb-6">
-
-              <h3 className="text-xl font-bold text-slate-900">
-                Education
-              </h3>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Your academic background.
-              </p>
-
-            </div>
-
-            <div className="grid grid-cols-1 gap-7 md:grid-cols-3">
-
-              <InfoItem
-                icon={Building2}
-                label="College"
-                value={college}
-              />
-
-              <InfoItem
-                icon={GraduationCap}
-                label="Degree"
-                value={degree}
-              />
-
-              <InfoItem
-                icon={Calendar}
-                label="Graduation Year"
-                value={graduationYear}
-              />
-
-            </div>
-
-          </section>
-
-          <div className="border-t border-slate-200" />
-
-          {/* =================================================
-              TECHNICAL SKILLS
-          ================================================== */}
-          <section className="px-7 py-7 lg:px-9">
-
-            <div className="mb-5 flex items-start gap-4">
-
-              <IconBox icon={Code2} />
-
-              <div>
-
-                <h3 className="text-xl font-bold text-slate-900">
-                  Technical Skills
-                </h3>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Technologies and skills in your profile.
-                </p>
-
-              </div>
-
-            </div>
-
-            {skills.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-
-                {skills.map((skill, index) => (
+                {skills.map((skill) => (
                   <span
-                    key={`${skill}-${index}`}
-                    className="rounded-lg border border-blue-100 bg-blue-50 px-3.5 py-2 text-sm font-semibold text-blue-600"
+                    key={skill}
+                    className="
+                      rounded-md
+                      border
+                      border-blue-100
+                      bg-blue-50
+                      px-3
+                      py-1.5
+                      text-xs
+                      font-semibold
+                      text-blue-600
+                    "
                   >
-                    {typeof skill === "string"
-                      ? skill
-                      : skill.name}
+                    {skill}
                   </span>
                 ))}
 
               </div>
-            ) : (
-              <p className="text-sm text-slate-400">
-                No technical skills added yet.
-              </p>
-            )}
 
-          </section>
+            </section>
 
-          <div className="border-t border-slate-200" />
 
-          {/* =================================================
-              ADDITIONAL INFORMATION
-          ================================================== */}
-          <section className="px-7 py-7 lg:px-9">
+            {/* ================= DIVIDER ================= */}
 
-            <div className="mb-6">
+            <div className="h-px bg-slate-200" />
 
-              <h3 className="text-xl font-bold text-slate-900">
-                Additional Information
-              </h3>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Additional details from your profile.
-              </p>
+            {/* ==================================================
+                ADDITIONAL INFORMATION
+            ================================================== */}
 
-            </div>
+            <section className="px-7 py-6">
 
-            <div className="grid grid-cols-1 gap-x-16 gap-y-7 md:grid-cols-2">
-
-              <InfoItem
-                icon={User}
-                label="Gender"
-                value={
-                  user?.gender || "Not available"
-                }
+              <SectionTitle
+                title="Additional Information"
+                description="Other information in your profile."
               />
 
-              <InfoItem
-                icon={Phone}
-                label="Phone Number"
-                value={
-                  user?.phone ||
-                  user?.phoneNumber ||
-                  "Not available"
-                }
-              />
 
-              <InfoItem
-                icon={MapPin}
-                label="Location"
-                value={
-                  user?.location || "Not available"
-                }
-              />
+              <div className="mt-6 grid grid-cols-1 gap-x-20 gap-y-7 md:grid-cols-2">
 
-              <InfoItem
-                icon={Globe}
-                label="Language"
-                value={
-                  user?.language ||
-                  user?.languages ||
-                  "Not available"
-                }
-              />
+                <Info
+                  icon={User}
+                  label="Gender"
+                  value="Male"
+                />
 
-              <InfoItem
-                icon={Calendar}
-                label="Date of Birth"
-                value={
-                  user?.dateOfBirth
-                    ? formatDate(user.dateOfBirth)
-                    : "Not available"
-                }
-              />
+                <Info
+                  icon={User}
+                  label="Experience"
+                  value="Fresher"
+                />
 
-              <InfoItem
-                icon={Briefcase}
-                label="Experience Level"
-                value={
-                  user?.experienceLevel ||
-                  user?.experience ||
-                  "Fresher"
-                }
-              />
+                <Info
+                  icon={Building2}
+                  label="Department"
+                  value="Information Technology"
+                />
 
-            </div>
+                <Info
+                  icon={CalendarDays}
+                  label="Profile Status"
+                  value="Active"
+                />
 
-          </section>
+              </div>
+
+            </section>
+
+          </div>
 
         </div>
 
@@ -457,41 +395,76 @@ function Profile() {
 }
 
 
-/* =========================================================
-   SMALL REUSABLE COMPONENTS
-========================================================= */
+/* ============================================================
+   SECTION TITLE
+============================================================ */
 
-function IconBox({ icon: Icon }) {
+function SectionTitle({ title, description }) {
   return (
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
-      <Icon size={20} strokeWidth={1.8} />
+    <div>
+
+      <h3 className="text-lg font-bold text-slate-900">
+        {title}
+      </h3>
+
+      <p className="mt-1 text-sm text-slate-500">
+        {description}
+      </p>
+
     </div>
   );
 }
 
 
-function InfoItem({
-  icon: Icon,
-  label,
-  value,
-}) {
+/* ============================================================
+   INFORMATION ITEM
+============================================================ */
+
+function Info({ icon: IconComponent, label, value }) {
   return (
     <div className="flex items-start gap-4">
 
-      <IconBox icon={Icon} />
+      <Icon>
+        <IconComponent size={18} />
+      </Icon>
 
       <div className="min-w-0">
 
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <p className="label">
           {label}
         </p>
 
-        <p className="mt-1 break-words text-sm font-semibold text-slate-900">
+        <p className="mt-1 text-sm font-semibold text-slate-900">
           {value}
         </p>
 
       </div>
 
+    </div>
+  );
+}
+
+
+/* ============================================================
+   ICON BOX
+============================================================ */
+
+function Icon({ children }) {
+  return (
+    <div
+      className="
+        flex
+        h-11
+        w-11
+        shrink-0
+        items-center
+        justify-center
+        rounded-xl
+        bg-slate-50
+        text-slate-500
+      "
+    >
+      {children}
     </div>
   );
 }

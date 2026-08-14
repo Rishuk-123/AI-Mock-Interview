@@ -3,27 +3,23 @@ import Navbar from "../components/Navbar";
 
 function MainLayout({ children }) {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="flex min-h-screen w-full bg-slate-50">
 
-      <div className="grid min-h-screen grid-cols-[280px_1fr]">
+      {/* Sidebar */}
+      <aside className="w-[350px] shrink-0 bg-white">
+        <Sidebar />
+      </aside>
 
-        {/* Sidebar */}
-        <aside className="border-r border-slate-200 bg-white">
-          <Sidebar />
-        </aside>
+      {/* RIGHT SIDE */}
+      <div className="min-w-0 flex-1">
 
-        {/* Main Area */}
-        <div className="min-w-0">
+        {/* Navbar */}
+        <Navbar />
 
-          {/* Navbar */}
-          <Navbar />
-
-          {/* Page Content */}
-          <main className="min-w-0">
-            {children}
-          </main>
-
-        </div>
+        {/* Page Content */}
+        <main className="min-w-0 bg-slate-50">
+          {children}
+        </main>
 
       </div>
 
