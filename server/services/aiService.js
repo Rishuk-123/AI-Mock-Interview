@@ -16,11 +16,8 @@ const evaluateAnswer = async ({
       score: 0,
       feedback: "No answer was provided.",
       strengths: [],
-      weaknesses: [
-        "The question was not answered.",
-      ],
-      improvement:
-        "Provide a clear and relevant answer.",
+      weaknesses: ["The question was not answered."],
+      improvement: "Provide a clear and relevant answer.",
     };
   }
 
@@ -38,7 +35,6 @@ Candidate Answer:
 ${answer}
 
 Evaluate the candidate based on:
-
 1. Relevance
 2. Technical correctness
 3. Clarity
@@ -46,10 +42,9 @@ Evaluate the candidate based on:
 5. Communication
 6. Practical understanding
 
-Return ONLY valid JSON.
+Return ONLY valid JSON with no markdown formatting or backticks.
 
 Use exactly this structure:
-
 {
   "score": 0,
   "feedback": "Short overall evaluation",
@@ -70,8 +65,6 @@ Rules:
 - provide 2 to 3 strengths
 - provide 2 to 3 weaknesses
 - provide specific improvement advice
-- do not include markdown
-- return only JSON
 `;
 
   try {
@@ -87,19 +80,21 @@ Rules:
           content: prompt,
         },
       ],
-
       model: "llama-3.3-70b-versatile",
-
       temperature: 0.2,
-
       max_tokens: 500,
+      response_format: { type: "json_object" }, // Enforce JSON mode if supported by Groq setup
     });
 
-    const text =
-      completion.choices?.[0]?.message?.content?.trim();
+    let text = completion.choices?.[0]?.message?.content?.trim();
 
     if (!text) {
       throw new Error("Empty AI response");
+    }
+
+    // Strip Markdown code blocks if present (e.g., ```json ... ```)
+    if (text.startsWith("```")) {
+      text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
     }
 
     let evaluation;
@@ -108,47 +103,27 @@ Rules:
       evaluation = JSON.parse(text);
     } catch (parseError) {
       console.error("AI JSON parsing error:", parseError);
-      console.error("AI response:", text);
-
-      throw new Error(
-        "AI returned invalid JSON"
-      );
+      console.error("AI raw response:", text);
+      throw new Error("AI returned invalid JSON");
     }
 
     return {
       score: Math.max(
         0,
-        Math.min(
-          100,
-          Number(evaluation.score) || 0
-        )
+        Math.min(100, Number(evaluation.score) || 0)
       ),
-
-      feedback:
-        evaluation.feedback || "",
-
-      strengths:
-        Array.isArray(evaluation.strengths)
-          ? evaluation.strengths
-          : [],
-
-      weaknesses:
-        Array.isArray(evaluation.weaknesses)
-          ? evaluation.weaknesses
-          : [],
-
-      improvement:
-        evaluation.improvement || "",
+      feedback: evaluation.feedback || "",
+      strengths: Array.isArray(evaluation.strengths)
+        ? evaluation.strengths
+        : [],
+      weaknesses: Array.isArray(evaluation.weaknesses)
+        ? evaluation.weaknesses
+        : [],
+      improvement: evaluation.improvement || "",
     };
   } catch (error) {
-    console.error(
-      "Groq evaluation error:",
-      error
-    );
-
-    throw new Error(
-      "AI evaluation failed"
-    );
+    console.error("Groq evaluation error:", error);
+    throw new Error("AI evaluation failed");
   }
 };
 

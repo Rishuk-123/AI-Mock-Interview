@@ -1,11 +1,12 @@
 import User from "../models/User.js";
 import cloudinary from "../config/cloudinary.js";
 
+// @desc    Get user profile
+// @route   GET /api/users/profile
+// @access  Private
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select(
-      "-password"
-    );
+    const user = await User.findById(req.user.id).select("-password");
 
     if (!user) {
       return res.status(404).json({
@@ -20,7 +21,6 @@ export const getProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Get profile error:", error);
-
     res.status(500).json({
       success: false,
       message: "Failed to fetch profile",
@@ -28,15 +28,12 @@ export const getProfile = async (req, res) => {
   }
 };
 
+// @desc    Update user details
+// @route   PUT /api/users/profile
+// @access  Private
 export const updateProfile = async (req, res) => {
   try {
-    const {
-      fullName,
-      college,
-      degree,
-      graduationYear,
-      skills,
-    } = req.body;
+    const { fullName, college, degree, graduationYear, skills } = req.body;
 
     const user = await User.findById(req.user.id);
 
@@ -54,7 +51,6 @@ export const updateProfile = async (req, res) => {
           message: "Full name cannot be empty",
         });
       }
-
       user.fullName = fullName.trim();
     }
 
@@ -68,29 +64,32 @@ export const updateProfile = async (req, res) => {
 
     if (graduationYear !== undefined) {
       user.graduationYear =
-        graduationYear === ""
+        graduationYear === "" || graduationYear === null
           ? undefined
           : Number(graduationYear);
     }
 
     if (skills !== undefined) {
-      if (!Array.isArray(skills)) {
+      let parsedSkills = [];
+      if (Array.isArray(skills)) {
+        parsedSkills = skills;
+      } else if (typeof skills === "string") {
+        parsedSkills = skills.split(",");
+      } else {
         return res.status(400).json({
           success: false,
-          message: "Skills must be an array",
+          message: "Skills must be an array or comma-separated string",
         });
       }
 
-      user.skills = skills
+      user.skills = parsedSkills
         .map((skill) => skill.trim())
         .filter(Boolean);
     }
 
     await user.save();
 
-    const updatedUser = await User.findById(
-      req.user.id
-    ).select("-password");
+    const updatedUser = await User.findById(req.user.id).select("-password");
 
     res.status(200).json({
       success: true,
@@ -99,7 +98,6 @@ export const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Update profile error:", error);
-
     res.status(500).json({
       success: false,
       message: "Failed to update profile",
@@ -107,6 +105,9 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+// @desc    Upload resume PDF to Cloudinary
+// @route   POST /api/users/resume
+// @access  Private
 export const uploadResume = async (req, res) => {
   try {
     if (!req.file) {
@@ -125,36 +126,30 @@ export const uploadResume = async (req, res) => {
       });
     }
 
-    const uploadResult = await new Promise(
-      (resolve, reject) => {
-        const stream =
-          cloudinary.uploader.upload_stream(
-            {
-              folder: "ai-mock-interview/resumes",
-              resource_type: "raw",
-              public_id: `${req.user.id}-resume.pdf`,
-              overwrite: true,
-            },
-            (error, result) => {
-              if (error) {
-                reject(error);
-              } else {
-                resolve(result);
-              }
-            }
-          );
+    const uploadResult = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: "ai-mock-interview/resumes",
+          resource_type: "raw",
+          public_id: `${req.user.id}-resume.pdf`,
+          overwrite: true,
+        },
+        (error, result) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        }
+      );
 
-        stream.end(req.file.buffer);
-      }
-    );
+      stream.end(req.file.buffer);
+    });
 
     user.resume = uploadResult.secure_url;
-
     await user.save();
 
-    const updatedUser = await User.findById(
-      req.user.id
-    ).select("-password");
+    const updatedUser = await User.findById(req.user.id).select("-password");
 
     res.status(200).json({
       success: true,
@@ -164,7 +159,6 @@ export const uploadResume = async (req, res) => {
     });
   } catch (error) {
     console.error("Upload resume error:", error);
-
     res.status(500).json({
       success: false,
       message: "Failed to upload resume",
