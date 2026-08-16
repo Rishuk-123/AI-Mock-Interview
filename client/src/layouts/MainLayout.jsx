@@ -1,82 +1,49 @@
-import { useState } from "react";
+import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
-  User,
+  Video,
   History,
-  Code2,
+  User,
   LogOut,
-  Menu,
-  X,
   Bell,
   Sparkles,
-  ChevronRight,
 } from "lucide-react";
-
 import useAuthStore from "../store/authStore";
 
 function MainLayout({ children }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
 
-  const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
-
-  const fullName = user?.fullName || "John Doe";
-  const email = user?.email || "john.doe@example.com";
-  const initial = fullName?.charAt(0)?.toUpperCase() || "U";
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   const navItems = [
-    { label: "Dashboard", path: "/", icon: LayoutDashboard },
-    { label: "Practice", path: "/interview", icon: Code2 },
+    { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { label: "Practice", path: "/interview", icon: Video },
     { label: "History", path: "/history", icon: History },
     { label: "Profile", path: "/profile", icon: User },
   ];
 
-  const handleLogout = () => {
-    if (logout) logout();
-    navigate("/login");
-  };
-
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      {/* ================= MOBILE MENU OVERLAY ================= */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
+    <div className="flex min-h-screen bg-slate-950 font-sans text-white antialiased">
+      {/* Left Sidebar */}
+      <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-slate-800/80 bg-slate-950 p-6">
+        {/* Brand Logo */}
+        <Link to="/dashboard" className="flex items-center space-x-3 mb-10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 font-bold text-white shadow-lg shadow-blue-500/20">
+            <Sparkles size={20} />
+          </div>
+          <span className="text-xl font-bold tracking-tight text-white">
+            PrepPortal
+          </span>
+        </Link>
 
-      {/* ================= SIDEBAR ================= */}
-      <aside
-        className={`
-          fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-200 ease-in-out
-          lg:static lg:translate-x-0
-          ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
-        `}
-      >
-        {/* Brand Header */}
-        <div className="flex h-16 items-center justify-between border-b border-slate-100 px-6">
-          <Link to="/" className="flex items-center gap-2.5 font-bold text-slate-900">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
-              <Sparkles size={20} />
-            </div>
-            <span className="text-lg tracking-tight">PrepPortal</span>
-          </Link>
-
-          <button
-            type="button"
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 lg:hidden"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Navigation Links */}
-        <nav className="flex-1 space-y-1.5 px-4 py-6">
+        {/* Navigation Menu */}
+        <nav className="space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -85,90 +52,51 @@ function MainLayout({ children }) {
               <Link
                 key={item.path}
                 to={item.path}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`
-                  flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all
-                  ${
-                    isActive
-                      ? "bg-blue-50 text-blue-600 font-semibold"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }
-                `}
+                className={`flex items-center space-x-3 rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                  isActive
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                    : "text-slate-400 hover:bg-slate-900 hover:text-white"
+                }`}
               >
-                <div className="flex items-center gap-3">
-                  <Icon size={19} className={isActive ? "text-blue-600" : "text-slate-400"} />
-                  <span>{item.label}</span>
-                </div>
-                {isActive && <ChevronRight size={16} className="text-blue-600" />}
+                <Icon size={18} />
+                <span>{item.label}</span>
               </Link>
             );
           })}
         </nav>
-
-        {/* Sidebar Footer / User Profile Brief */}
-        <div className="border-t border-slate-100 p-4">
-          <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-600">
-                {initial}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold text-slate-900">{fullName}</p>
-                <p className="truncate text-[11px] text-slate-500">{email}</p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              title="Logout"
-              className="ml-1 rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-600"
-            >
-              <LogOut size={17} />
-            </button>
-          </div>
-        </div>
       </aside>
 
-      {/* ================= MAIN CONTENT WRAPPER ================= */}
-      <div className="flex flex-1 flex-col min-w-0">
-        {/* Top Navbar */}
-        <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/80 px-5 backdrop-blur-md sm:px-7 lg:px-8">
-          <div className="flex items-center gap-3">
+      {/* Main Content Area */}
+      <div className="flex flex-1 flex-col pl-64">
+        {/* Top Header */}
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-end border-b border-slate-800/80 bg-slate-950/80 px-8 backdrop-blur">
+          <div className="flex items-center space-x-4">
+            {/* Notification Icon */}
             <button
               type="button"
-              className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
-              onClick={() => setMobileMenuOpen(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-400 transition hover:border-slate-700 hover:text-white"
             >
-              <Menu size={22} />
-            </button>
-          </div>
-
-          {/* Right Header Actions */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className="relative rounded-full p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-            >
-              <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-blue-600" />
+              <Bell size={18} />
             </button>
 
-            <div className="h-6 w-px bg-slate-200" />
-
-            <Link
-              to="/profile"
-              className="flex items-center gap-2 rounded-full p-1 hover:bg-slate-100"
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-600">
-                {initial}
+            {/* User Avatar & Logout */}
+            <div className="flex items-center space-x-3 border-l border-slate-800 pl-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600/20 font-bold text-blue-400 border border-blue-500/30">
+                {user?.fullName?.charAt(0) || "U"}
               </div>
-            </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex items-center space-x-1.5 text-xs font-semibold text-slate-400 hover:text-red-400 transition"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1">{children}</main>
+        {/* Page Body */}
+        <main className="flex-1 bg-slate-950 p-6">{children}</main>
       </div>
     </div>
   );
