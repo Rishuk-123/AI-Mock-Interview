@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   User,
   Mail,
@@ -9,6 +9,9 @@ import {
   GraduationCap,
   Code2,
   Pencil,
+  X,
+  Check,
+  Loader2,
 } from "lucide-react";
 
 import MainLayout from "../layouts/MainLayout";
@@ -16,6 +19,32 @@ import useAuthStore from "../store/authStore";
 
 function Profile() {
   const user = useAuthStore((state) => state.user);
+  const updateProfile = useAuthStore((state) => state.updateProfile);
+  const loading = useAuthStore((state) => state.loading);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    college: "",
+    degree: "",
+    graduationYear: "",
+    skills: "",
+  });
+
+  // Populate local form state when user object loads or modal opens
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        fullName: user.fullName || "",
+        college: user.college || "NIT Jalandhar",
+        degree: user.degree || "B.Tech",
+        graduationYear: user.graduationYear || "2028",
+        skills: user.skills?.length
+          ? user.skills.join(", ")
+          : "HTML, CSS, JAVASCRIPT, C++, NODE.JS, REACT",
+      });
+    }
+  }, [user, isEditing]);
 
   const fullName = user?.fullName || "John Doe";
   const email = user?.email || "john.doe@example.com";
@@ -40,6 +69,31 @@ function Profile() {
     lastEntryDate: user?.lastEntryDate || "11/8/2026",
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Convert comma-separated string back to an array of trimmed skill strings
+    const skillsArray = formData.skills
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const updatedPayload = {
+      ...formData,
+      skills: skillsArray,
+    };
+
+    if (updateProfile) {
+      await updateProfile(updatedPayload);
+    }
+    setIsEditing(false);
+  };
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-slate-950 text-white">
@@ -47,15 +101,19 @@ function Profile() {
           {/* HEADER */}
           <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight text-white">Profile</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight text-white">
+                Profile
+              </h1>
               <p className="mt-1 text-sm text-slate-400">
                 Manage your personal, academic, and technical information.
               </p>
             </div>
 
+            {/* EDIT PROFILE BUTTON */}
             <button
               type="button"
-              className="flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500"
+              onClick={() => setIsEditing(true)}
+              className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500 active:scale-95"
             >
               <Pencil size={16} />
               Edit Profile
@@ -67,7 +125,7 @@ function Profile() {
             {/* PROFILE BANNER / HEADER */}
             <div className="flex flex-col gap-5 px-7 py-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-5">
-                <div className="flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full bg-blue-950/80 border border-blue-800/50 text-3xl font-bold text-blue-400">
+                <div className="flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full border border-blue-800/50 bg-blue-950/80 text-3xl font-bold text-blue-400 uppercase">
                   {initial}
                 </div>
 
@@ -75,8 +133,8 @@ function Profile() {
                   <h2 className="text-2xl font-bold text-white">
                     {fullName}
                   </h2>
-                  <p className="mt-0.5 text-sm font-medium text-slate-400">
-                    Candidate
+                  <p className="mt-0.5 text-sm font-medium text-slate-400 capitalize">
+                    {user?.role || "Candidate"}
                   </p>
 
                   <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">
@@ -114,13 +172,13 @@ function Profile() {
                 <Info
                   icon={ShieldCheck}
                   label="Account Type"
-                  value="Candidate"
+                  value={user?.role ? user.role.toUpperCase() : "CANDIDATE"}
                 />
 
                 <div className="flex items-center gap-4">
-                  <Icon>
+                  <IconContainer>
                     <Lock size={18} />
-                  </Icon>
+                  </IconContainer>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                       Password
@@ -180,9 +238,9 @@ function Profile() {
             {/* TECHNICAL SKILLS */}
             <section className="px-7 py-6">
               <div className="flex items-center gap-4">
-                <Icon>
+                <IconContainer>
                   <Code2 size={19} />
-                </Icon>
+                </IconContainer>
                 <div>
                   <h3 className="text-lg font-bold text-white">
                     Technical Skills
@@ -240,6 +298,118 @@ function Profile() {
           </div>
         </div>
       </div>
+
+      {/* EDIT PROFILE MODAL */}
+      {isEditing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h2 className="text-xl font-bold text-white">Edit Profile Details</h2>
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                    College / University
+                  </label>
+                  <input
+                    type="text"
+                    name="college"
+                    value={formData.college}
+                    onChange={handleInputChange}
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Degree
+                  </label>
+                  <input
+                    type="text"
+                    name="degree"
+                    value={formData.degree}
+                    onChange={handleInputChange}
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Graduation Year
+                </label>
+                <input
+                  type="number"
+                  name="graduationYear"
+                  value={formData.graduationYear}
+                  onChange={handleInputChange}
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Skills (Comma-separated)
+                </label>
+                <input
+                  type="text"
+                  name="skills"
+                  value={formData.skills}
+                  onChange={handleInputChange}
+                  placeholder="React, Node.js, Express, MongoDB"
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white"
+                >
+                  <X size={16} /> Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Check size={16} />
+                  )}
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 }
@@ -258,9 +428,9 @@ function SectionTitle({ title, description }) {
 function Info({ icon: IconComponent, label, value }) {
   return (
     <div className="flex items-start gap-4">
-      <Icon>
+      <IconContainer>
         <IconComponent size={18} />
-      </Icon>
+      </IconContainer>
       <div className="min-w-0">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
           {label}
@@ -271,9 +441,9 @@ function Info({ icon: IconComponent, label, value }) {
   );
 }
 
-function Icon({ children }) {
+function IconContainer({ children }) {
   return (
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-blue-400 border border-slate-800">
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-blue-400">
       {children}
     </div>
   );

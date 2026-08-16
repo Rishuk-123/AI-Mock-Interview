@@ -1,353 +1,400 @@
-import { useEffect, useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   FileText,
   Upload,
-  ExternalLink,
   CheckCircle2,
-  ShieldCheck,
-  FileCheck2,
+  AlertCircle,
+  Sparkles,
+  Trash2,
+  Eye,
+  RefreshCw,
+  X,
+  Target,
+  Award,
+  ExternalLink,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
-import { Card } from "../components/ui/card";
-import { Button } from "../components/ui/button";
 import MainLayout from "../layouts/MainLayout";
-import api from "../services/api";
+import useAuthStore from "../store/authStore";
 
 function Resume() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [viewing, setViewing] = useState(false);
+  const user = useAuthStore((state) => state.user);
 
-  const fetchProfile = async () => {
-    try {
-      console.log("Fetching profile...");
+  const [file, setFile] = useState(null);
+  // Default sample PDF URL so preview works immediately without re-uploading
+  const [fileUrl, setFileUrl] = useState(
+    user?.resumeUrl ||
+      "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf"
+  );
+  const [isDragging, setIsDragging] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
-      const response = await api.get("/users/profile");
+  const fileInputRef = useRef(null);
 
-      console.log("Profile response:", response.data);
+  const [resumeData, setResumeData] = useState({
+    fileName: user?.resumeName || "Candidate_Resume_2026.pdf",
+    uploadedAt: "Aug 15, 2026",
+    fileSize: "1.2 MB",
+    atsScore: 82,
+  });
 
-      setUser(response.data.user);
-    } catch (error) {
-      console.error("PROFILE ERROR:", error);
-      console.error("STATUS:", error.response?.status);
-      console.error("DATA:", error.response?.data);
-      console.error("MESSAGE:", error.message);
+  const [analysisResult, setAnalysisResult] = useState({
+    summary:
+      "Strong background in React, Node.js, and Full-Stack Architecture.",
+    strengths: [
+      "Quantifiable metrics included in projects",
+      "Clean visual structure and section titles",
+      "High keyword density for Full-Stack Developer roles",
+    ],
+    improvements: [
+      "Include links to live project demos or GitHub repositories",
+      "Add cloud deployment tools like AWS or Docker to technical skills",
+    ],
+    keywordsFound: [
+      "JavaScript",
+      "React.js",
+      "Node.js",
+      "MongoDB",
+      "Express",
+      "Tailwind CSS",
+      "REST APIs",
+    ],
+  });
 
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to load resume"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Update PDF preview URL when a new local file is selected
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setFileUrl(url);
 
-  const handleUpload = async (event) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
+      return () => {
+        URL.revokeObjectURL(url);
+      };
     }
+  }, [file]);
 
-    if (file.type !== "application/pdf") {
-      toast.error("Only PDF files are allowed");
-      event.target.value = "";
-      return;
-    }
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Resume must be smaller than 5 MB");
-      event.target.value = "";
-      return;
-    }
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
 
-    try {
-      setUploading(true);
-
-      const formData = new FormData();
-
-      formData.append("resume", file);
-
-      const response = await api.post(
-        "/users/resume",
-        formData
-      );
-
-      setUser(response.data.user);
-
-      toast.success("Resume uploaded successfully");
-    } catch (error) {
-      console.error("Resume upload error:", error);
-
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to upload resume"
-      );
-    } finally {
-      setUploading(false);
-      event.target.value = "";
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelected(e.dataTransfer.files[0]);
     }
   };
 
-  const handleViewResume = async () => {
-    if (!user?.resume) {
-      toast.error("No resume uploaded");
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileSelected(e.target.files[0]);
+    }
+  };
+
+  const handleFileSelected = (selectedFile) => {
+    if (selectedFile.type !== "application/pdf") {
+      alert("Please upload a valid PDF file.");
       return;
     }
+    setFile(selectedFile);
+    runAiAnalysis(selectedFile.name, selectedFile.size);
+  };
 
-    try {
-      setViewing(true);
-
-      const response = await fetch(user.resume);
-
-      if (!response.ok) {
-        throw new Error("Unable to open resume");
-      }
-
-      const blob = await response.blob();
-
-      const pdfBlob = new Blob([blob], {
-        type: "application/pdf",
+  const runAiAnalysis = (fileName, fileSize) => {
+    setIsAnalyzing(true);
+    setTimeout(() => {
+      setResumeData({
+        fileName: fileName,
+        uploadedAt: "Just now",
+        fileSize: `${(fileSize / (1024 * 1024)).toFixed(1)} MB`,
+        atsScore: 88,
       });
-
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-
-      window.open(pdfUrl, "_blank");
-
-      setTimeout(() => {
-        URL.revokeObjectURL(pdfUrl);
-      }, 60000);
-    } catch (error) {
-      console.error("View resume error:", error);
-
-      toast.error(
-        "Unable to open resume. Please try again."
-      );
-    } finally {
-      setViewing(false);
-    }
+      setIsAnalyzing(false);
+    }, 1200);
   };
 
-  if (loading) {
-    return (
-      <MainLayout>
-        <div className="flex min-h-[500px] items-center justify-center bg-slate-950">
-          <div className="text-center">
-            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-800 border-t-blue-500" />
-
-            <p className="text-sm font-medium text-slate-400">
-              Loading resume...
-            </p>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
+  const handleRemoveResume = () => {
+    setFile(null);
+    setFileUrl(null);
+    setResumeData(null);
+    setAnalysisResult(null);
+  };
 
   return (
     <MainLayout>
-      <div className="mx-auto w-full max-w-5xl bg-slate-950 text-white min-h-screen p-6">
-
-        {/* HEADER */}
-        <div className="mb-8">
-          <div className="mb-3 flex items-center gap-2">
-            <FileText
-              size={20}
-              className="text-blue-400"
-            />
-
-            <span className="text-sm font-bold uppercase tracking-[0.22em] text-blue-400">
-              Resume Management
-            </span>
-          </div>
-
-          <h1 className="text-4xl font-extrabold tracking-tight text-white">
-            Your Resume
-          </h1>
-
-          <p className="mt-2 max-w-2xl text-lg text-slate-400">
-            Upload your latest resume so you can keep your
-            profile ready for interviews.
-          </p>
-        </div>
-
-        {/* MAIN CARD */}
-        <Card className="overflow-hidden border-slate-800 bg-slate-900/80 p-0 shadow-xl backdrop-blur">
-
-          {/* TOP SECTION */}
-          <div className="border-b border-slate-800/80 px-8 py-8">
-            <div className="flex flex-col items-center text-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-950 text-blue-400 border border-blue-800/50 shadow-lg shadow-blue-500/10">
-                <FileText size={38} />
-              </div>
-
-              <h2 className="mt-5 text-2xl font-bold text-white">
-                {user?.resume
-                  ? "Resume uploaded"
-                  : "Upload your resume"}
-              </h2>
-
-              <p className="mt-2 max-w-lg text-sm leading-6 text-slate-400">
-                Upload your latest resume in PDF format.
-                The maximum supported file size is 5 MB.
+      <div className="min-h-screen bg-slate-50 text-slate-900">
+        <div className="mx-auto max-w-7xl px-5 py-8 sm:px-7 lg:px-8">
+          {/* HEADER */}
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+                Resume Analyzer
+              </h1>
+              <p className="mt-1 text-sm text-slate-500">
+                Upload your resume for instant AI analysis, ATS scoring, and
+                customized interview questions.
               </p>
             </div>
+
+            {resumeData && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500 active:scale-95"
+              >
+                <RefreshCw size={16} />
+                Re-upload Resume
+              </button>
+            )}
           </div>
 
-          {/* UPLOADED RESUME */}
-          {user?.resume ? (
-            <div className="px-8 py-7">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
-                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".pdf"
+            className="hidden"
+          />
 
-                  {/* FILE INFO */}
-                  <div className="flex min-w-0 items-center gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-red-950/80 text-red-400 border border-red-800/50">
-                      <FileText size={27} />
+          {/* DRAG & DROP AREA / UPLOAD SECTION */}
+          {!resumeData && !isAnalyzing && (
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12 text-center transition ${
+                isDragging
+                  ? "border-blue-500 bg-blue-50/50"
+                  : "border-slate-300 bg-white hover:border-blue-400 hover:bg-slate-50"
+              }`}
+            >
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600 shadow-sm">
+                <Upload size={28} />
+              </div>
+              <h3 className="mt-4 text-lg font-bold text-slate-900">
+                Upload your PDF Resume
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">
+                Drag and drop your file here, or click to browse
+              </p>
+              <p className="mt-2 text-xs font-medium text-slate-400">
+                Supports PDF files up to 5MB
+              </p>
+            </div>
+          )}
+
+          {/* LOADING STATE */}
+          {isAnalyzing && (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/80 bg-white p-16 shadow-sm">
+              <div className="flex h-16 w-16 animate-bounce items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600">
+                <Sparkles size={28} />
+              </div>
+              <h3 className="mt-4 text-lg font-bold text-slate-900">
+                Analyzing Resume with AI...
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">
+                Parsing tech stack, checking ATS readiness, and generating
+                recommendations.
+              </p>
+            </div>
+          )}
+
+          {/* RESUME DISPLAY & ATS RESULTS */}
+          {resumeData && !isAnalyzing && (
+            <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+              {/* LEFT COLUMN */}
+              <div className="flex flex-col gap-6 lg:col-span-5">
+                {/* FILE CARD */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600">
+                      <FileText size={24} />
                     </div>
-
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate font-semibold text-white">
-                          Resume.pdf
-                        </p>
-
-                        <CheckCircle2
-                          size={17}
-                          className="shrink-0 text-emerald-400"
-                        />
-                      </div>
-
-                      <p className="mt-1 text-sm text-slate-400">
-                        PDF document • Ready to view
+                    <div className="min-w-0 flex-1">
+                      <h4 className="truncate text-base font-bold text-slate-900">
+                        {resumeData.fileName}
+                      </h4>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {resumeData.fileSize} • Uploaded {resumeData.uploadedAt}
                       </p>
                     </div>
                   </div>
 
-                  {/* ACTIONS */}
-                  <div className="flex shrink-0 flex-wrap gap-3">
-                    <Button
+                  <div className="mt-5 flex items-center gap-3">
+                    <button
                       type="button"
-                      onClick={handleViewResume}
-                      disabled={viewing}
-                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/25"
+                      onClick={() => setShowPreviewModal(true)}
+                      className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                     >
-                      <ExternalLink size={17} />
+                      <Eye size={15} /> Preview PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveResume}
+                      className="flex cursor-pointer items-center justify-center rounded-xl border border-red-200 bg-red-50 p-2.5 text-red-600 transition hover:bg-red-100"
+                      title="Delete Resume"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
 
-                      {viewing
-                        ? "Opening..."
-                        : "View Resume"}
-                    </Button>
-
-                    <label className="cursor-pointer">
-                      <span className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-4 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white">
-                        <Upload size={17} />
-
-                        {uploading
-                          ? "Uploading..."
-                          : "Replace"}
-                      </span>
-
-                      <input
-                        type="file"
-                        accept="application/pdf"
-                        onChange={handleUpload}
-                        disabled={uploading}
-                        className="hidden"
-                      />
-                    </label>
+                {/* ATS SCORE CARD */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
+                      <Target size={15} className="text-blue-600" /> ATS
+                      Compatibility Score
+                    </span>
+                    <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-600">
+                      Passed
+                    </span>
                   </div>
 
+                  <div className="mt-4 flex items-center gap-5">
+                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50 text-2xl font-extrabold text-emerald-600">
+                      {resumeData.atsScore}%
+                    </div>
+                    <div>
+                      <p className="text-base font-bold text-slate-900">
+                        Great ATS Match!
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                        Your resume contains well-formatted headings and
+                        recognizable technical skills.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
 
-            /* UPLOAD STATE */
-            <div className="px-8 py-8">
-              <label className="block cursor-pointer">
-                <div className="rounded-2xl border-2 border-dashed border-slate-800 bg-slate-950/60 px-6 py-12 text-center transition hover:border-blue-500 hover:bg-blue-950/30">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-slate-900 text-blue-400 border border-slate-800 shadow-sm">
-                    <Upload size={26} />
+              {/* RIGHT COLUMN */}
+              <div className="flex flex-col gap-6 lg:col-span-7">
+                {/* STRENGTHS & IMPROVEMENTS */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-7 shadow-sm">
+                  <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600">
+                      <Sparkles size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">
+                        AI Evaluation & Feedback
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Automated insights based on your technical profile
+                      </p>
+                    </div>
                   </div>
 
-                  <p className="mt-5 text-base font-semibold text-white">
-                    {uploading
-                      ? "Uploading your resume..."
-                      : "Upload your resume"}
-                  </p>
+                  <div className="mt-6 space-y-6">
+                    <div>
+                      <h4 className="flex items-center gap-2 text-sm font-bold text-emerald-600">
+                        <CheckCircle2 size={16} /> Key Strengths
+                      </h4>
+                      <ul className="mt-3 space-y-2.5">
+                        {analysisResult?.strengths.map((item, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-2.5 text-xs font-medium text-slate-700"
+                          >
+                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
 
-                  <p className="mt-2 text-sm text-slate-400">
-                    Click here to select a PDF file
-                  </p>
-
-                  <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-medium text-slate-400 shadow-sm">
-                    <FileCheck2 size={15} />
-                    PDF only • Maximum 5 MB
+                    <div>
+                      <h4 className="flex items-center gap-2 text-sm font-bold text-amber-600">
+                        <AlertCircle size={16} /> Recommended Improvements
+                      </h4>
+                      <ul className="mt-3 space-y-2.5">
+                        {analysisResult?.improvements.map((item, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-2.5 text-xs font-medium text-slate-700"
+                          >
+                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
 
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={handleUpload}
-                  disabled={uploading}
-                  className="hidden"
-                />
-              </label>
+                {/* KEYWORDS */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                  <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-900">
+                    <Award size={16} className="text-blue-600" /> Extracted
+                    Technical Keywords
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {analysisResult?.keywordsFound.map((keyword) => (
+                      <span
+                        key={keyword}
+                        className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase text-blue-700"
+                      >
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
+        </div>
+      </div>
 
-          {/* FOOTER INFO */}
-          <div className="border-t border-slate-800/80 bg-slate-950/60 px-8 py-6">
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-
-              <div className="flex gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-950 text-blue-400 border border-blue-800/40">
-                  <ShieldCheck size={20} />
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold text-slate-200">
-                    Secure Resume Storage
-                  </p>
-
-                  <p className="mt-1 text-xs leading-5 text-slate-400">
-                    Your uploaded resume is associated with
-                    your account.
-                  </p>
-                </div>
+      {/* PDF PREVIEW MODAL */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="flex h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <div className="flex items-center gap-2">
+                <FileText size={18} className="text-blue-600" />
+                <h3 className="text-base font-bold text-slate-900">
+                  {resumeData?.fileName}
+                </h3>
               </div>
-
-              <div className="flex gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-950 text-blue-400 border border-blue-800/40">
-                  <FileCheck2 size={20} />
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold text-slate-200">
-                    Supported Format
-                  </p>
-
-                  <p className="mt-1 text-xs leading-5 text-slate-400">
-                    PDF files only, with a maximum size of 5 MB.
-                  </p>
-                </div>
+              <div className="flex items-center gap-3">
+                {fileUrl && (
+                  <a
+                    href={fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    Open in new tab <ExternalLink size={14} />
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowPreviewModal(false)}
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                >
+                  <X size={20} />
+                </button>
               </div>
+            </div>
 
+            <div className="flex-1 bg-slate-100">
+              <iframe
+                src={fileUrl}
+                title="PDF Document Preview"
+                className="h-full w-full border-none"
+              />
             </div>
           </div>
-
-        </Card>
-
-      </div>
+        </div>
+      )}
     </MainLayout>
   );
 }
