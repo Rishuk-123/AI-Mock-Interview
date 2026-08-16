@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Video,
   History,
+  FileText,
   User,
   LogOut,
   Bell,
@@ -25,6 +26,7 @@ function MainLayout({ children }) {
     { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { label: "Practice", path: "/interview", icon: Video },
     { label: "History", path: "/history", icon: History },
+    { label: "Resume", path: "/resume", icon: FileText },
     { label: "Profile", path: "/profile", icon: User },
   ];
 

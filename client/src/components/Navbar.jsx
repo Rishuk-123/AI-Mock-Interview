@@ -9,9 +9,6 @@ import useAuthStore from "../store/authStore";
 function Navbar() {
   const user = useAuthStore((state) => state.user);
 
-  const firstName =
-    user?.fullName?.split(" ")[0] || "there";
-
   const initial =
     user?.fullName?.charAt(0)?.toUpperCase() || "U";
 
@@ -26,49 +23,35 @@ function Navbar() {
         items-center
         justify-between
         border-b
-        border-slate-200
-        bg-white/95
+        border-slate-800/80
+        bg-slate-950/80
         px-6
         backdrop-blur
         lg:px-8
       "
     >
-      {/* ================================================= */}
       {/* LEFT */}
-      {/* ================================================= */}
-
       <div className="min-w-0">
-
         <div className="flex items-center gap-2.5">
-
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-950 text-blue-400 border border-blue-800/50">
             <Sparkles size={16} />
           </div>
 
           <div className="min-w-0">
-
-            <p className="truncate text-sm font-bold text-slate-900">
+            <p className="truncate text-sm font-bold text-white">
               AI Mock Interview
             </p>
 
             <p className="hidden text-[11px] text-slate-400 sm:block">
               Prepare smarter. Interview better.
             </p>
-
           </div>
-
         </div>
-
       </div>
 
-      {/* ================================================= */}
       {/* RIGHT */}
-      {/* ================================================= */}
-
       <div className="flex items-center gap-3">
-
-        {/* Notification */}
-
+        {/* Notification Button */}
         <button
           type="button"
           aria-label="Notifications"
@@ -81,55 +64,43 @@ function Navbar() {
             justify-center
             rounded-xl
             border
-            border-slate-200
-            bg-white
-            text-slate-500
+            border-slate-800
+            bg-slate-900
+            text-slate-400
             transition-all
-            hover:border-blue-200
-            hover:bg-blue-50
-            hover:text-blue-600
+            hover:border-slate-700
+            hover:text-white
           "
         >
-
           <Bell size={18} />
-
-          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-blue-600" />
-
+          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
         </button>
 
         {/* Divider */}
+        <div className="hidden h-8 w-px bg-slate-800 sm:block" />
 
-        <div className="hidden h-8 w-px bg-slate-200 sm:block" />
-
-        {/* User */}
-
+        {/* User Badge */}
         <div className="flex items-center gap-3">
-
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white shadow-sm">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600/20 font-bold text-blue-400 border border-blue-500/30 shadow-sm">
             {initial}
           </div>
 
           <div className="hidden min-w-0 sm:block">
-
-            <p className="max-w-[150px] truncate text-sm font-semibold text-slate-900">
+            <p className="max-w-[150px] truncate text-sm font-semibold text-white">
               {user?.fullName || "User"}
             </p>
 
             <p className="text-[11px] font-medium text-slate-400">
               Candidate
             </p>
-
           </div>
 
           <ChevronDown
             size={15}
-            className="hidden text-slate-400 sm:block"
+            className="hidden text-slate-500 sm:block"
           />
-
         </div>
-
       </div>
-
     </header>
   );
 }

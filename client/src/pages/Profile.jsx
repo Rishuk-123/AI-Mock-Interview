@@ -42,20 +42,20 @@ function Profile() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-950 text-white">
         <div className="w-full px-5 py-6 sm:px-7 lg:px-8">
           {/* HEADER */}
           <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Profile</h1>
-              <p className="mt-1 text-sm text-slate-500">
+              <h1 className="text-3xl font-extrabold tracking-tight text-white">Profile</h1>
+              <p className="mt-1 text-sm text-slate-400">
                 Manage your personal, academic, and technical information.
               </p>
             </div>
 
             <button
               type="button"
-              className="flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700"
+              className="flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500"
             >
               <Pencil size={16} />
               Edit Profile
@@ -63,23 +63,23 @@ function Profile() {
           </div>
 
           {/* MAIN PROFILE CARD */}
-          <div className="w-full overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm">
+          <div className="w-full overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900/80 shadow-lg backdrop-blur">
             {/* PROFILE BANNER / HEADER */}
             <div className="flex flex-col gap-5 px-7 py-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-5">
-                <div className="flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full bg-blue-50 text-3xl font-semibold text-blue-600">
+                <div className="flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full bg-blue-950/80 border border-blue-800/50 text-3xl font-bold text-blue-400">
                   {initial}
                 </div>
 
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">
+                  <h2 className="text-2xl font-bold text-white">
                     {fullName}
                   </h2>
-                  <p className="mt-0.5 text-sm font-medium text-slate-500">
+                  <p className="mt-0.5 text-sm font-medium text-slate-400">
                     Candidate
                   </p>
 
-                  <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
+                  <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">
                     <Mail size={16} />
                     <span>{email}</span>
                   </div>
@@ -91,15 +91,15 @@ function Profile() {
                   Account Status
                 </p>
                 <div className="mt-1.5 flex items-center gap-2 sm:justify-end">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                  <span className="text-sm font-semibold text-emerald-600">
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-sm font-semibold text-emerald-400">
                     Account Active
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="h-px bg-slate-200" />
+            <div className="h-px bg-slate-800/80" />
 
             {/* PERSONAL INFORMATION */}
             <section className="px-7 py-6">
@@ -126,12 +126,12 @@ function Profile() {
                       Password
                     </p>
                     <div className="mt-1 flex items-center gap-3">
-                      <span className="text-sm font-semibold tracking-[3px] text-slate-900">
+                      <span className="text-sm font-semibold tracking-[3px] text-white">
                         ••••••••
                       </span>
                       <button
                         type="button"
-                        className="text-sm font-medium text-blue-600 transition hover:text-blue-700"
+                        className="text-sm font-medium text-blue-400 transition hover:text-blue-300"
                       >
                         Change
                       </button>
@@ -147,7 +147,7 @@ function Profile() {
               </div>
             </section>
 
-            <div className="h-px bg-slate-200" />
+            <div className="h-px bg-slate-800/80" />
 
             {/* EDUCATION */}
             <section className="px-7 py-6">
@@ -175,7 +175,7 @@ function Profile() {
               </div>
             </section>
 
-            <div className="h-px bg-slate-200" />
+            <div className="h-px bg-slate-800/80" />
 
             {/* TECHNICAL SKILLS */}
             <section className="px-7 py-6">
@@ -184,10 +184,10 @@ function Profile() {
                   <Code2 size={19} />
                 </Icon>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">
+                  <h3 className="text-lg font-bold text-white">
                     Technical Skills
                   </h3>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-slate-400">
                     Technologies and skills in your profile.
                   </p>
                 </div>
@@ -197,7 +197,7 @@ function Profile() {
                 {skills.map((skill) => (
                   <span
                     key={skill}
-                    className="rounded-md border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase text-blue-600"
+                    className="rounded-lg border border-blue-800/50 bg-blue-950/60 px-3 py-1.5 text-xs font-semibold uppercase text-blue-400"
                   >
                     {skill}
                   </span>
@@ -205,7 +205,7 @@ function Profile() {
               </div>
             </section>
 
-            <div className="h-px bg-slate-200" />
+            <div className="h-px bg-slate-800/80" />
 
             {/* ADDITIONAL INFORMATION */}
             <section className="px-7 py-6">
@@ -249,8 +249,8 @@ function Profile() {
 function SectionTitle({ title, description }) {
   return (
     <div>
-      <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-      <p className="mt-1 text-sm text-slate-500">{description}</p>
+      <h3 className="text-lg font-bold text-white">{title}</h3>
+      <p className="mt-1 text-sm text-slate-400">{description}</p>
     </div>
   );
 }
@@ -265,7 +265,7 @@ function Info({ icon: IconComponent, label, value }) {
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
           {label}
         </p>
-        <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
+        <p className="mt-1 text-sm font-semibold text-white">{value}</p>
       </div>
     </div>
   );
@@ -273,7 +273,7 @@ function Info({ icon: IconComponent, label, value }) {
 
 function Icon({ children }) {
   return (
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-blue-400 border border-slate-800">
       {children}
     </div>
   );

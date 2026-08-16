@@ -66,47 +66,47 @@ function InterviewSetup() {
 
   return (
     <MainLayout>
-      <div className="mx-auto w-full max-w-6xl">
+      <div className="mx-auto w-full max-w-6xl bg-slate-950 text-white min-h-screen p-6">
 
         {/* Page Header */}
         <div className="mb-8">
           <div className="mb-2 flex items-center gap-2">
             <Sparkles
               size={22}
-              className="text-blue-600"
+              className="text-blue-400"
             />
 
-            <span className="text-sm font-bold uppercase tracking-[0.25em] text-blue-600">
+            <span className="text-sm font-bold uppercase tracking-[0.25em] text-blue-400">
               AI Interview Practice
             </span>
           </div>
 
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-4xl font-extrabold tracking-tight text-white">
             Start a New Interview
           </h1>
 
-          <p className="mt-2 text-lg text-slate-500">
+          <p className="mt-2 text-lg text-slate-400">
             Configure your interview and practice with an AI interviewer.
           </p>
         </div>
 
         {/* Main Card */}
-        <Card className="overflow-hidden p-0 shadow-sm">
+        <Card className="overflow-hidden border-slate-800 bg-slate-900/80 p-0 shadow-xl backdrop-blur">
 
           {/* Card Header */}
-          <div className="border-b border-slate-200 px-8 py-6">
+          <div className="border-b border-slate-800/80 px-8 py-6">
             <div className="flex items-center gap-4">
 
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-950/80 text-blue-400 border border-blue-800/50">
                 <Sparkles size={24} />
               </div>
 
               <div>
-                <h2 className="text-xl font-bold text-slate-900">
+                <h2 className="text-xl font-bold text-white">
                   Interview Details
                 </h2>
 
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-slate-400">
                   Select the type of interview you want to practice.
                 </p>
               </div>
@@ -127,12 +127,12 @@ function InterviewSetup() {
                   <div className="mb-2 flex items-center gap-2">
                     <Briefcase
                       size={18}
-                      className="text-blue-600"
+                      className="text-blue-400"
                     />
 
-                    <label className="text-sm font-semibold text-slate-700">
+                    <label className="text-sm font-semibold text-slate-300">
                       Job Role{" "}
-                      <span className="text-red-500">*</span>
+                      <span className="text-red-400">*</span>
                     </label>
                   </div>
 
@@ -141,10 +141,10 @@ function InterviewSetup() {
                     value={formData.role}
                     onChange={handleChange}
                     placeholder="e.g. Frontend Developer"
-                    className="h-12"
+                    className="h-12 bg-slate-950 border-slate-800 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500"
                   />
 
-                  <p className="mt-2 text-xs text-slate-400">
+                  <p className="mt-2 text-xs text-slate-500">
                     The role you are preparing for.
                   </p>
                 </div>
@@ -154,10 +154,10 @@ function InterviewSetup() {
                   <div className="mb-2 flex items-center gap-2">
                     <Building2
                       size={18}
-                      className="text-blue-600"
+                      className="text-blue-400"
                     />
 
-                    <label className="text-sm font-semibold text-slate-700">
+                    <label className="text-sm font-semibold text-slate-300">
                       Company
                     </label>
                   </div>
@@ -167,10 +167,10 @@ function InterviewSetup() {
                     value={formData.company}
                     onChange={handleChange}
                     placeholder="e.g. Google, Microsoft, Amazon"
-                    className="h-12"
+                    className="h-12 bg-slate-950 border-slate-800 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500"
                   />
 
-                  <p className="mt-2 text-xs text-slate-400">
+                  <p className="mt-2 text-xs text-slate-500">
                     Optional — helps personalize the interview.
                   </p>
                 </div>
@@ -179,7 +179,7 @@ function InterviewSetup() {
 
               {/* Interview Settings */}
               <div>
-                <h3 className="mb-4 text-sm font-bold text-slate-800">
+                <h3 className="mb-4 text-sm font-bold text-white">
                   Interview Settings
                 </h3>
 
@@ -190,10 +190,10 @@ function InterviewSetup() {
                     <div className="mb-2 flex items-center gap-2">
                       <Brain
                         size={18}
-                        className="text-blue-600"
+                        className="text-blue-400"
                       />
 
-                      <label className="text-sm font-semibold text-slate-700">
+                      <label className="text-sm font-semibold text-slate-300">
                         Interview Type
                       </label>
                     </div>
@@ -202,21 +202,21 @@ function InterviewSetup() {
                       name="interviewType"
                       value={formData.interviewType}
                       onChange={handleChange}
-                      className="h-12 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      className="h-12 w-full rounded-xl border border-slate-800 bg-slate-950 px-4 text-sm text-white outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     >
-                      <option value="Technical">
+                      <option value="Technical" className="bg-slate-950 text-white">
                         Technical
                       </option>
 
-                      <option value="Behavioral">
+                      <option value="Behavioral" className="bg-slate-950 text-white">
                         Behavioral
                       </option>
 
-                      <option value="HR">
+                      <option value="HR" className="bg-slate-950 text-white">
                         HR
                       </option>
 
-                      <option value="Mixed">
+                      <option value="Mixed" className="bg-slate-950 text-white">
                         Mixed
                       </option>
                     </select>
@@ -227,10 +227,10 @@ function InterviewSetup() {
                     <div className="mb-2 flex items-center gap-2">
                       <Gauge
                         size={18}
-                        className="text-blue-600"
+                        className="text-blue-400"
                       />
 
-                      <label className="text-sm font-semibold text-slate-700">
+                      <label className="text-sm font-semibold text-slate-300">
                         Difficulty
                       </label>
                     </div>
@@ -239,17 +239,17 @@ function InterviewSetup() {
                       name="difficulty"
                       value={formData.difficulty}
                       onChange={handleChange}
-                      className="h-12 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      className="h-12 w-full rounded-xl border border-slate-800 bg-slate-950 px-4 text-sm text-white outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     >
-                      <option value="Easy">
+                      <option value="Easy" className="bg-slate-950 text-white">
                         Easy
                       </option>
 
-                      <option value="Medium">
+                      <option value="Medium" className="bg-slate-950 text-white">
                         Medium
                       </option>
 
-                      <option value="Hard">
+                      <option value="Hard" className="bg-slate-950 text-white">
                         Hard
                       </option>
                     </select>
@@ -261,9 +261,9 @@ function InterviewSetup() {
             </div>
 
             {/* What You Can Expect */}
-            <div className="border-t border-slate-200 bg-slate-50 px-8 py-6">
+            <div className="border-t border-slate-800/80 bg-slate-950/60 px-8 py-6">
 
-              <h3 className="mb-5 text-sm font-bold text-slate-800">
+              <h3 className="mb-5 text-sm font-bold text-white">
                 What you can expect
               </h3>
 
@@ -271,16 +271,16 @@ function InterviewSetup() {
 
                 {/* Feature 1 */}
                 <div className="flex gap-3">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-600">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-950 text-sm font-bold text-blue-400 border border-blue-800/50">
                     ✓
                   </div>
 
                   <div>
-                    <p className="font-medium text-slate-800">
+                    <p className="font-medium text-slate-200">
                       Relevant Questions
                     </p>
 
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-slate-400">
                       Questions based on your selected role.
                     </p>
                   </div>
@@ -288,16 +288,16 @@ function InterviewSetup() {
 
                 {/* Feature 2 */}
                 <div className="flex gap-3">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-600">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-950 text-sm font-bold text-blue-400 border border-blue-800/50">
                     ✓
                   </div>
 
                   <div>
-                    <p className="font-medium text-slate-800">
+                    <p className="font-medium text-slate-200">
                       AI Evaluation
                     </p>
 
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-slate-400">
                       Receive feedback on your answers.
                     </p>
                   </div>
@@ -305,16 +305,16 @@ function InterviewSetup() {
 
                 {/* Feature 3 */}
                 <div className="flex gap-3">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-600">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-950 text-sm font-bold text-blue-400 border border-blue-800/50">
                     ✓
                   </div>
 
                   <div>
-                    <p className="font-medium text-slate-800">
+                    <p className="font-medium text-slate-200">
                       Performance Score
                     </p>
 
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-slate-400">
                       Track your interview performance.
                     </p>
                   </div>
@@ -325,11 +325,11 @@ function InterviewSetup() {
             </div>
 
             {/* Submit */}
-            <div className="border-t border-slate-200 px-8 py-6">
+            <div className="border-t border-slate-800/80 px-8 py-6">
 
               <Button
                 type="submit"
-                className="h-12 w-full text-base"
+                className="h-12 w-full text-base bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/25"
                 disabled={loading}
               >
                 {loading
@@ -343,7 +343,7 @@ function InterviewSetup() {
                 )}
               </Button>
 
-              <p className="mt-3 text-center text-xs text-slate-400">
+              <p className="mt-3 text-center text-xs text-slate-500">
                 Your interview will be generated using your selections.
               </p>
 

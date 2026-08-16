@@ -190,11 +190,11 @@ function InterviewRoom() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex min-h-[500px] items-center justify-center">
+        <div className="flex min-h-[500px] items-center justify-center bg-slate-950">
           <div className="text-center">
-            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
+            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-800 border-t-blue-500" />
 
-            <p className="text-sm font-medium text-slate-600">
+            <p className="text-sm font-medium text-slate-400">
               Preparing your interview...
             </p>
           </div>
@@ -206,8 +206,8 @@ function InterviewRoom() {
   if (!interview) {
     return (
       <MainLayout>
-        <div className="flex min-h-[500px] items-center justify-center">
-          <p className="text-slate-600">
+        <div className="flex min-h-[500px] items-center justify-center bg-slate-950">
+          <p className="text-slate-400">
             Interview not found.
           </p>
         </div>
@@ -220,19 +220,18 @@ function InterviewRoom() {
   if (questions.length === 0) {
     return (
       <MainLayout>
-        <div className="flex min-h-[500px] flex-col items-center justify-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+        <div className="flex min-h-[500px] flex-col items-center justify-center gap-4 bg-slate-950">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-950 text-blue-400 border border-blue-800/50">
             <MessageSquareText size={26} />
           </div>
 
-          <p className="text-slate-600">
+          <p className="text-slate-400">
             No interview questions available.
           </p>
 
           <Button
-            onClick={() =>
-              navigate("/interview")
-            }
+            onClick={() => navigate("/interview")}
+            className="bg-blue-600 hover:bg-blue-500 text-white"
           >
             Back to Interview Setup
           </Button>
@@ -246,8 +245,8 @@ function InterviewRoom() {
   if (!question) {
     return (
       <MainLayout>
-        <div className="flex min-h-[500px] items-center justify-center">
-          <p className="text-slate-600">
+        <div className="flex min-h-[500px] items-center justify-center bg-slate-950">
+          <p className="text-slate-400">
             Question not found.
           </p>
         </div>
@@ -267,36 +266,30 @@ function InterviewRoom() {
 
   return (
     <MainLayout>
-      <div className="mx-auto w-full max-w-6xl">
+      <div className="mx-auto w-full max-w-6xl bg-slate-950 text-white min-h-screen p-6">
 
-        {/* ================================================= */}
         {/* HEADER */}
-        {/* ================================================= */}
-
         <div className="mb-6">
-
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <Sparkles
                   size={19}
-                  className="text-blue-600"
+                  className="text-blue-400"
                 />
 
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
                   Live AI Interview
                 </span>
               </div>
 
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              <h1 className="text-3xl font-extrabold tracking-tight text-white">
                 {interview.role}
               </h1>
 
               {interview.company && (
-                <p className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+                <p className="mt-1 flex items-center gap-2 text-sm text-slate-400">
                   <Building2 size={15} />
-
                   {interview.company}
                 </p>
               )}
@@ -304,40 +297,31 @@ function InterviewRoom() {
 
             {!isCompleted && (
               <div className="flex items-center gap-3">
-
-                <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600">
+                <div className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/80 px-4 py-2 text-sm font-medium text-slate-300">
                   <Clock3
                     size={16}
-                    className="text-blue-600"
+                    className="text-blue-400"
                   />
-
                   Question {currentQuestion + 1} of{" "}
                   {questions.length}
                 </div>
 
-                <div className="rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-600">
+                <div className="rounded-full bg-blue-950/80 border border-blue-800/50 px-4 py-2 text-sm font-semibold text-blue-400">
                   {interview.difficulty}
                 </div>
-
               </div>
             )}
-
           </div>
 
           {/* Progress */}
-
           {!isCompleted && (
             <div className="mt-6">
-
               <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
                 <span>Interview Progress</span>
-
-                <span>
-                  {Math.round(progress)}%
-                </span>
+                <span>{Math.round(progress)}%</span>
               </div>
 
-              <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+              <div className="h-2 overflow-hidden rounded-full bg-slate-900 border border-slate-800">
                 <div
                   className="h-full rounded-full bg-blue-600 transition-all duration-500"
                   style={{
@@ -345,50 +329,42 @@ function InterviewRoom() {
                   }}
                 />
               </div>
-
             </div>
           )}
-
         </div>
 
-        {/* ================================================= */}
         {/* COMPLETED */}
-        {/* ================================================= */}
-
         {isCompleted ? (
-
-          <Card className="overflow-hidden p-0 shadow-sm">
-
+          <Card className="overflow-hidden border-slate-800 bg-slate-900/80 p-0 shadow-xl backdrop-blur">
             <div className="px-8 py-14 text-center">
-
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/50">
                 <Trophy size={38} />
               </div>
 
-              <h2 className="mt-6 text-3xl font-bold text-slate-900">
+              <h2 className="mt-6 text-3xl font-bold text-white">
                 Interview Completed
               </h2>
 
-              <p className="mx-auto mt-2 max-w-lg text-slate-500">
+              <p className="mx-auto mt-2 max-w-lg text-slate-400">
                 You have successfully completed this
                 AI mock interview. Review your detailed
                 feedback and performance score.
               </p>
 
-              <div className="mx-auto mt-8 flex h-36 w-36 items-center justify-center rounded-full bg-blue-50">
+              <div className="mx-auto mt-8 flex h-36 w-36 items-center justify-center rounded-full bg-blue-950/80 border border-blue-800/50">
                 <div>
-                  <p className="text-4xl font-bold text-blue-600">
+                  <p className="text-4xl font-extrabold text-blue-400">
                     {interview.overallScore}
                   </p>
 
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-slate-400">
                     Overall Score
                   </p>
                 </div>
               </div>
 
               <Button
-                className="mt-8"
+                className="mt-8 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/25"
                 onClick={() =>
                   navigate(
                     `/interview/${id}/results`
@@ -401,34 +377,20 @@ function InterviewRoom() {
                   className="ml-2"
                 />
               </Button>
-
             </div>
-
           </Card>
-
         ) : (
-
-          /* ================================================= */
           /* ACTIVE INTERVIEW */
-          /* ================================================= */
-
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-            {/* ================================================= */}
             {/* MAIN INTERVIEW */}
-            {/* ================================================= */}
-
             <div className="lg:col-span-2">
-
-              <Card className="overflow-hidden p-0 shadow-sm">
+              <Card className="overflow-hidden border-slate-800 bg-slate-900/80 p-0 shadow-xl backdrop-blur">
 
                 {/* Question Header */}
-
-                <div className="border-b border-slate-200 px-7 py-5">
-
+                <div className="border-b border-slate-800/80 px-7 py-5">
                   <div className="flex items-center gap-3">
-
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-950/80 text-blue-400 border border-blue-800/50">
                       <Brain size={21} />
                     </div>
 
@@ -437,52 +399,40 @@ function InterviewRoom() {
                         Interview Question
                       </p>
 
-                      <p className="text-sm font-semibold text-slate-900">
+                      <p className="text-sm font-semibold text-white">
                         Question {currentQuestion + 1}
                       </p>
                     </div>
-
                   </div>
-
                 </div>
 
                 {/* Question */}
-
                 <div className="px-7 py-7">
-
-                  <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-7">
-
-                    <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-blue-600">
+                  <div className="rounded-2xl border border-blue-900/50 bg-blue-950/40 p-7">
+                    <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-blue-400">
                       <Sparkles size={17} />
-
                       AI Interviewer
                     </div>
 
-                    <p className="text-xl font-semibold leading-8 text-slate-900">
+                    <p className="text-xl font-semibold leading-8 text-white">
                       {question.question}
                     </p>
-
                   </div>
 
                   {/* Answer */}
-
                   <div className="mt-7">
-
                     <div className="mb-3 flex items-center justify-between">
-
-                      <label className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                      <label className="flex items-center gap-2 text-sm font-semibold text-slate-200">
                         <MessageSquareText
                           size={17}
-                          className="text-blue-600"
+                          className="text-blue-400"
                         />
-
                         Your Answer
                       </label>
 
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-slate-500">
                         {answer.length} characters
                       </span>
-
                     </div>
 
                     <textarea
@@ -493,27 +443,23 @@ function InterviewRoom() {
                       placeholder="Type your answer here. Explain your approach clearly and provide examples where relevant..."
                       rows={10}
                       disabled={submitting}
-                      className="w-full resize-none rounded-xl border border-slate-300 bg-white p-5 text-sm leading-7 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 disabled:bg-slate-100"
+                      className="w-full resize-none rounded-xl border border-slate-800 bg-slate-950 p-5 text-sm leading-7 text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-slate-900"
                     />
 
                     <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-slate-500">
                         Take your time and give a clear,
                         structured answer.
                       </p>
 
                       <Button
-                        onClick={
-                          handleSubmitAnswer
-                        }
+                        onClick={handleSubmitAnswer}
                         disabled={submitting}
-                        className="flex h-11 items-center justify-center gap-2 px-6"
+                        className="flex h-11 items-center justify-center gap-2 px-6 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/25"
                       >
                         {submitting ? (
                           <>
                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-
                             AI is evaluating...
                           </>
                         ) : (
@@ -521,183 +467,139 @@ function InterviewRoom() {
                             {isLastQuestion
                               ? "Finish Interview"
                               : "Submit Answer"}
-
                             <Send size={17} />
                           </>
                         )}
                       </Button>
-
                     </div>
-
                   </div>
 
-                  {/* ================================================= */}
                   {/* AI EVALUATION */}
-                  {/* ================================================= */}
-
                   {evaluation && (
-                    <div className="mt-7 overflow-hidden rounded-2xl border border-blue-200 bg-blue-50">
-
-                      <div className="flex items-center justify-between border-b border-blue-100 px-6 py-5">
-
+                    <div className="mt-7 overflow-hidden rounded-2xl border border-blue-900/50 bg-blue-950/60">
+                      <div className="flex items-center justify-between border-b border-blue-900/40 px-6 py-5">
                         <div className="flex items-center gap-3">
-
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-blue-400 border border-slate-800">
                             <Sparkles size={20} />
                           </div>
 
                           <div>
-                            <h2 className="font-bold text-slate-900">
+                            <h2 className="font-bold text-white">
                               AI Evaluation
                             </h2>
 
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-slate-400">
                               Feedback on your answer
                             </p>
                           </div>
-
                         </div>
 
-                        <div className="rounded-xl bg-white px-4 py-2 text-xl font-bold text-blue-600 shadow-sm">
+                        <div className="rounded-xl bg-slate-950 border border-slate-800 px-4 py-2 text-xl font-bold text-blue-400">
                           {evaluation.score}/100
                         </div>
-
                       </div>
 
                       <div className="space-y-5 p-6">
-
                         {/* Feedback */}
-
                         <div>
-                          <p className="text-sm font-bold text-slate-800">
+                          <p className="text-sm font-bold text-slate-200">
                             Feedback
                           </p>
 
-                          <p className="mt-2 text-sm leading-7 text-slate-600">
+                          <p className="mt-2 text-sm leading-7 text-slate-300">
                             {evaluation.feedback}
                           </p>
                         </div>
 
                         {/* Strengths */}
-
-                        {evaluation.strengths?.length >
-                          0 && (
+                        {evaluation.strengths?.length > 0 && (
                           <div>
-
-                            <p className="text-sm font-bold text-emerald-700">
+                            <p className="text-sm font-bold text-emerald-400">
                               Strengths
                             </p>
 
                             <ul className="mt-2 space-y-2">
                               {evaluation.strengths.map(
-                                (
-                                  strength,
-                                  index
-                                ) => (
+                                (strength, index) => (
                                   <li
                                     key={index}
-                                    className="flex gap-2 text-sm text-slate-600"
+                                    className="flex gap-2 text-sm text-slate-300"
                                   >
                                     <CheckCircle2
                                       size={17}
-                                      className="mt-0.5 shrink-0 text-emerald-500"
+                                      className="mt-0.5 shrink-0 text-emerald-400"
                                     />
-
                                     {strength}
                                   </li>
                                 )
                               )}
                             </ul>
-
                           </div>
                         )}
 
                         {/* Weaknesses */}
-
-                        {evaluation.weaknesses?.length >
-                          0 && (
+                        {evaluation.weaknesses?.length > 0 && (
                           <div>
-
-                            <p className="text-sm font-bold text-amber-700">
+                            <p className="text-sm font-bold text-amber-400">
                               Areas to Improve
                             </p>
 
                             <ul className="mt-2 space-y-2">
                               {evaluation.weaknesses.map(
-                                (
-                                  weakness,
-                                  index
-                                ) => (
+                                (weakness, index) => (
                                   <li
                                     key={index}
-                                    className="flex gap-2 text-sm text-slate-600"
+                                    className="flex gap-2 text-sm text-slate-300"
                                   >
-                                    <span className="mt-1 text-amber-500">
+                                    <span className="mt-1 text-amber-400">
                                       •
                                     </span>
-
                                     {weakness}
                                   </li>
                                 )
                               )}
                             </ul>
-
                           </div>
                         )}
 
                         {/* Improvement */}
-
                         {evaluation.improvement && (
-                          <div className="rounded-xl bg-white p-4">
-
-                            <p className="text-sm font-bold text-slate-800">
+                          <div className="rounded-xl bg-slate-950 border border-slate-800 p-4">
+                            <p className="text-sm font-bold text-white">
                               Improvement Suggestion
                             </p>
 
-                            <p className="mt-2 text-sm leading-6 text-slate-600">
+                            <p className="mt-2 text-sm leading-6 text-slate-300">
                               {evaluation.improvement}
                             </p>
-
                           </div>
                         )}
 
                         {!isLastQuestion && (
                           <div className="flex items-center justify-center gap-2 pt-2 text-xs text-slate-400">
-                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500" />
-
+                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-slate-800 border-t-blue-500" />
                             Moving to the next question...
                           </div>
                         )}
-
                       </div>
-
                     </div>
                   )}
-
                 </div>
-
               </Card>
-
             </div>
 
-            {/* ================================================= */}
             {/* SIDE PANEL */}
-            {/* ================================================= */}
-
             <div className="space-y-5">
 
               {/* Interview Details */}
-
-              <Card className="p-6 shadow-sm">
-
+              <Card className="border-slate-800 bg-slate-900/80 p-6 shadow-lg backdrop-blur">
                 <div className="mb-5 flex items-center gap-3">
-
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-slate-300 border border-slate-800">
                     <Briefcase size={19} />
                   </div>
 
                   <div>
-                    <h2 className="font-bold text-slate-900">
+                    <h2 className="font-bold text-white">
                       Interview Details
                     </h2>
 
@@ -705,17 +607,15 @@ function InterviewRoom() {
                       Current session
                     </p>
                   </div>
-
                 </div>
 
                 <div className="space-y-4">
-
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                       Role
                     </p>
 
-                    <p className="mt-1 font-semibold text-slate-900">
+                    <p className="mt-1 font-semibold text-white">
                       {interview.role}
                     </p>
                   </div>
@@ -725,25 +625,22 @@ function InterviewRoom() {
                       Company
                     </p>
 
-                    <p className="mt-1 font-semibold text-slate-900">
-                      {interview.company ||
-                        "Not specified"}
+                    <p className="mt-1 font-semibold text-white">
+                      {interview.company || "Not specified"}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                         Type
                       </p>
 
-                      <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+                      <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-white">
                         <MessageSquareText
                           size={14}
-                          className="text-blue-600"
+                          className="text-blue-400"
                         />
-
                         {interview.interviewType}
                       </p>
                     </div>
@@ -753,30 +650,23 @@ function InterviewRoom() {
                         Level
                       </p>
 
-                      <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+                      <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-white">
                         <Gauge
                           size={14}
-                          className="text-blue-600"
+                          className="text-blue-400"
                         />
-
                         {interview.difficulty}
                       </p>
                     </div>
-
                   </div>
-
                 </div>
-
               </Card>
 
               {/* Progress Card */}
-
-              <Card className="p-6 shadow-sm">
-
+              <Card className="border-slate-800 bg-slate-900/80 p-6 shadow-lg backdrop-blur">
                 <div className="mb-4 flex items-center justify-between">
-
                   <div>
-                    <p className="text-sm font-bold text-slate-900">
+                    <p className="text-sm font-bold text-white">
                       Your Progress
                     </p>
 
@@ -785,29 +675,26 @@ function InterviewRoom() {
                     </p>
                   </div>
 
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-950 text-blue-400 border border-blue-800/50">
                     <Clock3 size={19} />
                   </div>
-
                 </div>
 
                 <div className="mb-3 flex items-end justify-between">
-
-                  <p className="text-3xl font-bold text-slate-900">
+                  <p className="text-3xl font-bold text-white">
                     {currentQuestion + 1}
-                    <span className="text-base font-medium text-slate-400">
+                    <span className="text-base font-medium text-slate-500">
                       {" "}
                       / {questions.length}
                     </span>
                   </p>
 
-                  <p className="text-sm font-semibold text-blue-600">
+                  <p className="text-sm font-semibold text-blue-400">
                     {Math.round(progress)}%
                   </p>
-
                 </div>
 
-                <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                <div className="h-2 overflow-hidden rounded-full bg-slate-950 border border-slate-800">
                   <div
                     className="h-full rounded-full bg-blue-600 transition-all duration-500"
                     style={{
@@ -817,60 +704,43 @@ function InterviewRoom() {
                 </div>
 
                 <div className="mt-5 space-y-2">
+                  {questions.map((item, index) => {
+                    const answered =
+                      item.answer ||
+                      item.score !== undefined;
 
-                  {questions.map(
-                    (item, index) => {
-
-                      const answered =
-                        item.answer ||
-                        item.score !== undefined;
-
-                      return (
+                    return (
+                      <div
+                        key={item._id || index}
+                        className="flex items-center gap-3"
+                      >
                         <div
-                          key={
-                            item._id ||
-                            index
-                          }
-                          className="flex items-center gap-3"
+                          className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
+                            index === currentQuestion
+                              ? "bg-blue-600 text-white"
+                              : answered
+                                ? "bg-emerald-950/80 text-emerald-400 border border-emerald-800/50"
+                                : "bg-slate-950 text-slate-500 border border-slate-800"
+                          }`}
                         >
-
-                          <div
-                            className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
-                              index ===
-                              currentQuestion
-                                ? "bg-blue-600 text-white"
-                                : answered
-                                  ? "bg-emerald-50 text-emerald-600"
-                                  : "bg-slate-100 text-slate-400"
-                            }`}
-                          >
-                            {answered &&
-                            index !==
-                              currentQuestion ? (
-                              <CheckCircle2
-                                size={15}
-                              />
-                            ) : (
-                              index + 1
-                            )}
-                          </div>
-
-                          <div
-                            className={`h-px flex-1 ${
-                              index <
-                              currentQuestion
-                                ? "bg-emerald-200"
-                                : "bg-slate-100"
-                            }`}
-                          />
-
+                          {answered && index !== currentQuestion ? (
+                            <CheckCircle2 size={15} />
+                          ) : (
+                            index + 1
+                          )}
                         </div>
-                      );
-                    }
-                  )}
 
+                        <div
+                          className={`h-px flex-1 ${
+                            index < currentQuestion
+                              ? "bg-emerald-800/60"
+                              : "bg-slate-800"
+                          }`}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
-
               </Card>
 
             </div>
