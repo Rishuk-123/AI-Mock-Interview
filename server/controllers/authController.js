@@ -1,6 +1,19 @@
 import bcrypt from "bcryptjs";
-import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
+
+// Helper function to generate JWT token
+const generateToken = (id, role) => {
+  return jwt.sign(
+    { id, role },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+};
+
+// @desc    Register new user
+// @route   POST /api/auth/register
+// @access  Public
 export const register = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
@@ -29,13 +42,18 @@ export const register = async (req, res) => {
       password: hashedPassword,
     });
 
+    // Auto-generate token on registration
+    const token = generateToken(user._id, user.role);
+
     res.status(201).json({
       success: true,
       message: "User registered successfully",
+      token,
       user: {
         id: user._id,
         fullName: user.fullName,
         email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -45,6 +63,10 @@ export const register = async (req, res) => {
     });
   }
 };
+
+// @desc    Authenticate user & get token
+// @route   POST /api/auth/login
+// @access  Public
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -74,21 +96,43 @@ export const login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        id: user._id,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
-      }
-    );
+    const token = generateToken(user._id, user.role);
 
     res.status(200).json({
       success: true,
       message: "Login successful",
       token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// @desc    Get current user profile
+// @route   GET /api/users/profile
+// @access  Private
+export const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
       user: {
         id: user._id,
         fullName: user.fullName,

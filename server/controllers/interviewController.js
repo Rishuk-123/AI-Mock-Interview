@@ -1,14 +1,36 @@
 import Interview from "../models/Interview.js";
 import evaluateAnswer from "../services/aiService.js";
 
+// Helper to generate context-aware questions
+const generateDefaultQuestions = (role, company, interviewType, difficulty) => {
+  const companyPrefix = company ? `at ${company}` : "";
+  const level = difficulty || "Intermediate";
+
+  return [
+    {
+      question: `Tell me about yourself and your background relevant to the ${role} position ${companyPrefix}.`,
+    },
+    {
+      question: `For a ${level} ${role} role, what core technical concepts or tools do you consider most essential and why?`,
+    },
+    {
+      question: `Describe a challenging project you worked on as a ${role}. What obstacle did you face, and how did you resolve it?`,
+    },
+    {
+      question: `How do you approach testing, debugging, and code quality in a fast-paced environment ${companyPrefix}?`,
+    },
+    {
+      question: `What strategies do you use to collaborate effectively with cross-functional team members?`,
+    },
+  ];
+};
+
+// @desc    Create a new interview session
+// @route   POST /api/interviews
+// @access  Private
 export const createInterview = async (req, res) => {
   try {
-    const {
-      role,
-      company,
-      interviewType,
-      difficulty,
-    } = req.body;
+    const { role, company, interviewType, difficulty } = req.body;
 
     if (!role) {
       return res.status(400).json({
@@ -20,9 +42,9 @@ export const createInterview = async (req, res) => {
     const interview = await Interview.create({
       user: req.user.id,
       role,
-      company,
-      interviewType,
-      difficulty,
+      company: company || "",
+      interviewType: interviewType || "Technical",
+      difficulty: difficulty || "Intermediate",
       status: "scheduled",
     });
 
@@ -33,7 +55,6 @@ export const createInterview = async (req, res) => {
     });
   } catch (error) {
     console.error("Create interview error:", error);
-
     res.status(500).json({
       success: false,
       message: "Failed to create interview",
@@ -41,11 +62,12 @@ export const createInterview = async (req, res) => {
   }
 };
 
+// @desc    Get all interviews for logged-in user
+// @route   GET /api/interviews
+// @access  Private
 export const getMyInterviews = async (req, res) => {
   try {
-    const interviews = await Interview.find({
-      user: req.user.id,
-    }).sort({
+    const interviews = await Interview.find({ user: req.user.id }).sort({
       createdAt: -1,
     });
 
@@ -55,7 +77,6 @@ export const getMyInterviews = async (req, res) => {
     });
   } catch (error) {
     console.error("Get interviews error:", error);
-
     res.status(500).json({
       success: false,
       message: "Failed to fetch interviews",
@@ -63,6 +84,9 @@ export const getMyInterviews = async (req, res) => {
   }
 };
 
+// @desc    Get single interview details by ID
+// @route   GET /api/interviews/:id
+// @access  Private
 export const getInterviewById = async (req, res) => {
   try {
     const interview = await Interview.findOne({
@@ -83,13 +107,16 @@ export const getInterviewById = async (req, res) => {
     });
   } catch (error) {
     console.error("Get interview error:", error);
-
     res.status(500).json({
       success: false,
       message: "Failed to fetch interview",
     });
   }
 };
+
+// @desc    Start an interview & populate initial questions
+// @route   POST /api/interviews/:id/start
+// @access  Private
 export const startInterview = async (req, res) => {
   try {
     const interview = await Interview.findOne({
@@ -107,7 +134,7 @@ export const startInterview = async (req, res) => {
     if (interview.status === "in-progress") {
       return res.status(200).json({
         success: true,
-        message: "Interview already started",
+        message: "Interview already in progress",
         interview,
       });
     }
@@ -119,89 +146,41 @@ export const startInterview = async (req, res) => {
       });
     }
 
-    const questions = [
-      {
-        question: `Tell me about yourself and your experience relevant to the ${interview.role} role.`,
-      },
-      {
-        question: `What are your strongest technical skills for a ${interview.role} position?`,
-      },
-      {
-        question:
-          "Describe a challenging project you worked on and how you solved the problem.",
-      },
-      {
-        question:
-          "How do you handle debugging when your code is not working as expected?",
-      },
-      {
-        question:
-          "Where do you see yourself professionally in the next few years?",
-      },
-    ];
-
-    const updatedInterview = await Interview.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        user: req.user.id,
-        status: "scheduled",
-      },
-      {
-        $set: {
-          questions,
-          status: "in-progress",
-          startedAt: new Date(),
-        },
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
+    const questions = generateDefaultQuestions(
+      interview.role,
+      interview.company,
+      interview.interviewType,
+      interview.difficulty
     );
 
-    if (!updatedInterview) {
-      const currentInterview = await Interview.findOne({
-        _id: req.params.id,
-        user: req.user.id,
-      });
+    interview.questions = questions;
+    interview.status = "in-progress";
+    interview.startedAt = new Date();
 
-      if (currentInterview?.status === "in-progress") {
-        return res.status(200).json({
-          success: true,
-          message: "Interview already started",
-          interview: currentInterview,
-        });
-      }
-
-      return res.status(404).json({
-        success: false,
-        message: "Interview could not be started",
-      });
-    }
+    await interview.save();
 
     res.status(200).json({
       success: true,
       message: "Interview started successfully",
-      interview: updatedInterview,
+      interview,
     });
   } catch (error) {
     console.error("Start interview error:", error);
-
     res.status(500).json({
       success: false,
       message: "Failed to start interview",
     });
   }
 };
+
+// @desc    Submit answer for a specific question index
+// @route   POST /api/interviews/:id/answer
+// @access  Private
 export const submitAnswer = async (req, res) => {
   try {
     const { questionIndex, answer } = req.body;
 
-    if (
-      questionIndex === undefined ||
-      !answer ||
-      !answer.trim()
-    ) {
+    if (questionIndex === undefined || !answer || !answer.trim()) {
       return res.status(400).json({
         success: false,
         message: "Question index and answer are required",
@@ -227,10 +206,7 @@ export const submitAnswer = async (req, res) => {
       });
     }
 
-    if (
-      questionIndex < 0 ||
-      questionIndex >= interview.questions.length
-    ) {
+    if (questionIndex < 0 || questionIndex >= interview.questions.length) {
       return res.status(400).json({
         success: false,
         message: "Invalid question index",
@@ -238,7 +214,6 @@ export const submitAnswer = async (req, res) => {
     }
 
     interview.questions[questionIndex].answer = answer.trim();
-
     await interview.save();
 
     res.status(200).json({
@@ -248,99 +223,17 @@ export const submitAnswer = async (req, res) => {
     });
   } catch (error) {
     console.error("Submit answer error:", error);
-
     res.status(500).json({
       success: false,
       message: "Failed to save answer",
     });
   }
 };
-export const finishInterview = async (req, res) => {
-  try {
-    const interview = await Interview.findOne({
-      _id: req.params.id,
-      user: req.user.id,
-    });
 
-    if (!interview) {
-      return res.status(404).json({
-        success: false,
-        message: "Interview not found",
-      });
-    }
-
-    if (interview.status === "completed") {
-      return res.status(400).json({
-        success: false,
-        message: "Interview is already completed",
-      });
-    }
-
-    const answeredQuestions = interview.questions.filter(
-      (item) => item.answer && item.answer.trim()
-    );
-
-    if (answeredQuestions.length !== interview.questions.length) {
-      return res.status(400).json({
-        success: false,
-        message: "Please answer all questions before finishing",
-      });
-    }
-
-    const totalScore = interview.questions.reduce(
-      (sum, item) => sum + (item.score || 0),
-      0
-    );
-
-    const overallScore =
-      interview.questions.length > 0
-        ? Math.round(totalScore / interview.questions.length)
-        : 0;
-
-    const completedInterview = await Interview.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        user: req.user.id,
-        status: "in-progress",
-      },
-      {
-        $set: {
-          status: "completed",
-          overallScore,
-          completedAt: new Date(),
-        },
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-
-    if (!completedInterview) {
-      return res.status(400).json({
-        success: false,
-        message: "Interview could not be completed",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Interview completed successfully",
-      interview: completedInterview,
-    });
-  } catch (error) {
-    console.error("Finish interview error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to finish interview",
-    });
-  }
-};
-export const evaluateInterviewAnswer = async (
-  req,
-  res
-) => {
+// @desc    Evaluate individual question answer via AI
+// @route   POST /api/interviews/:id/evaluate
+// @access  Private
+export const evaluateInterviewAnswer = async (req, res) => {
   try {
     const { questionIndex } = req.body;
 
@@ -363,23 +256,19 @@ export const evaluateInterviewAnswer = async (
       });
     }
 
-    if (
-      questionIndex < 0 ||
-      questionIndex >= interview.questions.length
-    ) {
+    if (questionIndex < 0 || questionIndex >= interview.questions.length) {
       return res.status(400).json({
         success: false,
         message: "Invalid question index",
       });
     }
 
-    const question =
-      interview.questions[questionIndex];
+    const question = interview.questions[questionIndex];
 
     if (!question.answer?.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Answer is required",
+        message: "Answer is required before evaluation",
       });
     }
 
@@ -391,20 +280,11 @@ export const evaluateInterviewAnswer = async (
       difficulty: interview.difficulty,
     });
 
-    interview.questions[questionIndex].score =
-      evaluation.score;
-
-    interview.questions[questionIndex].feedback =
-      evaluation.feedback;
-
-    interview.questions[questionIndex].strengths =
-      evaluation.strengths;
-
-    interview.questions[questionIndex].weaknesses =
-      evaluation.weaknesses;
-
-    interview.questions[questionIndex].improvement =
-      evaluation.improvement;
+    interview.questions[questionIndex].score = evaluation.score || 0;
+    interview.questions[questionIndex].feedback = evaluation.feedback || "";
+    interview.questions[questionIndex].strengths = evaluation.strengths || [];
+    interview.questions[questionIndex].weaknesses = evaluation.weaknesses || [];
+    interview.questions[questionIndex].improvement = evaluation.improvement || "";
 
     await interview.save();
 
@@ -414,14 +294,75 @@ export const evaluateInterviewAnswer = async (
       evaluation,
     });
   } catch (error) {
-    console.error(
-      "Evaluate answer error:",
-      error
-    );
-
+    console.error("Evaluate answer error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to evaluate answer",
+    });
+  }
+};
+
+// @desc    Complete interview session & calculate overall score
+// @route   POST /api/interviews/:id/finish
+// @access  Private
+export const finishInterview = async (req, res) => {
+  try {
+    const interview = await Interview.findOne({
+      _id: req.params.id,
+      user: req.user.id,
+    });
+
+    if (!interview) {
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found",
+      });
+    }
+
+    if (interview.status === "completed") {
+      return res.status(400).json({
+        success: false,
+        message: "Interview is already completed",
+      });
+    }
+
+    const unanswered = interview.questions.some(
+      (item) => !item.answer || !item.answer.trim()
+    );
+
+    if (unanswered) {
+      return res.status(400).json({
+        success: false,
+        message: "Please answer all questions before finishing",
+      });
+    }
+
+    const totalScore = interview.questions.reduce(
+      (sum, item) => sum + (item.score || 0),
+      0
+    );
+
+    const overallScore =
+      interview.questions.length > 0
+        ? Math.round(totalScore / interview.questions.length)
+        : 0;
+
+    interview.status = "completed";
+    interview.overallScore = overallScore;
+    interview.completedAt = new Date();
+
+    await interview.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Interview completed successfully",
+      interview,
+    });
+  } catch (error) {
+    console.error("Finish interview error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to finish interview",
     });
   }
 };

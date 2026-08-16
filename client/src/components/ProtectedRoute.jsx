@@ -8,10 +8,13 @@ function ProtectedRoute({ children }) {
 
   if (!initialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-slate-500">
-          Loading...
-        </p>
+      <div className="flex min-h-screen items-center justify-center bg-slate-950">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-800 border-t-blue-500" />
+          <p className="text-sm font-medium text-slate-400">
+            Loading...
+          </p>
+        </div>
       </div>
     );
   }
