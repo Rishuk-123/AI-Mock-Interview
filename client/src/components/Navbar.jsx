@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bell,
-  ChevronDown,
   Sparkles,
   LogOut,
   User as UserIcon,
@@ -21,7 +20,7 @@ function Navbar() {
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
 
-  const initial = user?.fullName?.charAt(0)?.toUpperCase() || "U";
+  const initial = user?.fullName?.charAt(0)?.toUpperCase() || "J";
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -99,9 +98,11 @@ function Navbar() {
           </button>
 
           {isNotificationsOpen && (
-            <div className="absolute right-0 z-50 mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+            <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <p className="text-sm font-bold text-slate-900">Notifications</p>
+                <p className="text-sm font-bold text-slate-900">
+                  Notifications
+                </p>
                 <button
                   type="button"
                   onClick={() => setIsNotificationsOpen(false)}
@@ -120,27 +121,8 @@ function Navbar() {
         {/* DIVIDER */}
         <div className="hidden h-6 w-px bg-slate-200 sm:block" />
 
-        {/* USER PROFILE */}
-        <div className="relative flex items-center gap-1" ref={dropdownRef}>
-          <button
-            type="button"
-            onClick={handleProfileNavigate}
-            className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-1.5 transition hover:border-slate-300 hover:bg-slate-100 focus:outline-none"
-          >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 font-bold uppercase text-white shadow-sm">
-              {initial}
-            </div>
-
-            <div className="hidden min-w-0 text-left sm:block">
-              <p className="max-w-[140px] truncate text-sm font-semibold text-slate-900">
-                {user?.fullName || "User"}
-              </p>
-              <p className="text-[11px] font-medium capitalize text-slate-500">
-                {user?.role || "Candidate"}
-              </p>
-            </div>
-          </button>
-
+        {/* INITIAL BADGE BUTTON & DROPDOWN */}
+        <div className="relative flex items-center" ref={dropdownRef}>
           <button
             type="button"
             onClick={(e) => {
@@ -148,29 +130,25 @@ function Navbar() {
               setIsDropdownOpen((prev) => !prev);
               setIsNotificationsOpen(false);
             }}
-            aria-label="Toggle user menu"
-            className="hidden p-2 text-slate-400 transition-colors hover:text-slate-700 focus:outline-none sm:block"
+            aria-label="User menu"
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-blue-600 font-bold uppercase text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500 active:scale-95 focus:outline-none"
           >
-            <ChevronDown
-              size={16}
-              className={`transition-transform duration-200 ${
-                isDropdownOpen ? "rotate-180" : ""
-              }`}
-            />
+            {initial}
           </button>
 
+          {/* DROPDOWN MENU */}
           {isDropdownOpen && (
-            <div className="absolute right-0 z-50 mt-2 w-52 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl">
+            <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
               <div className="border-b border-slate-100 px-3 py-2.5">
                 <p className="truncate text-sm font-semibold text-slate-900">
-                  {user?.fullName || "User"}
+                  {user?.fullName || "John"}
                 </p>
                 <p className="truncate text-xs text-slate-500">
-                  {user?.email || "candidate@example.com"}
+                  {user?.email || "john123@gmail.com"}
                 </p>
               </div>
 
-              <div className="flex flex-col gap-0.5 pt-1">
+              <div className="flex flex-col gap-0.5 pt-1.5">
                 <button
                   type="button"
                   onClick={handleProfileNavigate}

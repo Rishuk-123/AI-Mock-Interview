@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import api from "../services/api";
 
-const useAuthStore = create((set) => ({
+const useAuthStore = create((set, get) => ({
   user: null,
   token: localStorage.getItem("token") || null,
   loading: false,
@@ -70,7 +70,7 @@ const useAuthStore = create((set) => ({
         token,
         initialized: true,
       });
-    } catch  {
+    } catch {
       localStorage.removeItem("token");
 
       set({
@@ -78,6 +78,27 @@ const useAuthStore = create((set) => ({
         token: null,
         initialized: true,
       });
+    }
+  },
+
+  updateProfile: async (data) => {
+    set({ loading: true });
+
+    try {
+      const res = await api.put("/users/profile", data);
+
+      set((state) => ({
+        user: res.data.user || { ...state.user, ...data },
+        loading: false,
+      }));
+
+      return res.data;
+    } catch (err) {
+      set({ loading: false });
+
+      throw err.response?.data || {
+        message: "Failed to update profile",
+      };
     }
   },
 
