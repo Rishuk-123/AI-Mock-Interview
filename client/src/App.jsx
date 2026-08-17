@@ -1,3 +1,4 @@
+// src/App.jsx
 import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import Resume from "./pages/Resume";
@@ -25,9 +26,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-
       <Route path="/login" element={<Login />} />
-
       <Route path="/register" element={<Register />} />
 
       <Route
@@ -54,14 +53,8 @@ function App() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/interview/:id"
-        element={
-          <ProtectedRoute>
-            <InterviewRoom />
-          </ProtectedRoute>
-        }
-      />
+
+      {/* RESULTS ROUTE MUST BE DEFINED BEFORE /interview/:id */}
       <Route
         path="/interview/:id/results"
         element={
@@ -70,6 +63,16 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/interview/:id"
+        element={
+          <ProtectedRoute>
+            <InterviewRoom />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/history"
         element={

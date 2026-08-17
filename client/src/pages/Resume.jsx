@@ -21,11 +21,7 @@ function Resume() {
   const user = useAuthStore((state) => state.user);
 
   const [file, setFile] = useState(null);
-  // Default sample PDF URL so preview works immediately without re-uploading
-  const [fileUrl, setFileUrl] = useState(
-    user?.resumeUrl ||
-      "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf"
-  );
+  const [fileUrl, setFileUrl] = useState(user?.resumeUrl || null);
   const [isDragging, setIsDragging] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -62,7 +58,7 @@ function Resume() {
     ],
   });
 
-  // Update PDF preview URL when a new local file is selected
+  // Create temporary Blob URL whenever a new file is uploaded locally
   useEffect(() => {
     if (file) {
       const url = URL.createObjectURL(file);
@@ -120,6 +116,9 @@ function Resume() {
   };
 
   const handleRemoveResume = () => {
+    if (fileUrl && fileUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(fileUrl);
+    }
     setFile(null);
     setFileUrl(null);
     setResumeData(null);
@@ -230,7 +229,13 @@ function Resume() {
                   <div className="mt-5 flex items-center gap-3">
                     <button
                       type="button"
-                      onClick={() => setShowPreviewModal(true)}
+                      onClick={() => {
+                        if (!fileUrl) {
+                          alert("Please upload a PDF file to preview.");
+                          return;
+                        }
+                        setShowPreviewModal(true);
+                      }}
                       className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                     >
                       <Eye size={15} /> Preview PDF
@@ -354,7 +359,7 @@ function Resume() {
       </div>
 
       {/* PDF PREVIEW MODAL */}
-      {showPreviewModal && (
+      {showPreviewModal && fileUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
           <div className="flex h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
@@ -365,16 +370,14 @@ function Resume() {
                 </h3>
               </div>
               <div className="flex items-center gap-3">
-                {fileUrl && (
-                  <a
-                    href={fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700"
-                  >
-                    Open in new tab <ExternalLink size={14} />
-                  </a>
-                )}
+                <a
+                  href={fileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  Open in new tab <ExternalLink size={14} />
+                </a>
                 <button
                   type="button"
                   onClick={() => setShowPreviewModal(false)}
