@@ -1,154 +1,112 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Link, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
-
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Card } from "../components/ui/card";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Sparkles, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import useAuthStore from "../store/authStore";
 
-const loginSchema = z.object({
-  email: z
-    .string()
-    .email("Please enter a valid email address"),
-
-  password: z
-    .string()
-    .min(6, "Password must contain at least 6 characters"),
-});
-
-function Login() {
+export default function Login() {
   const navigate = useNavigate();
-
   const login = useAuthStore((state) => state.login);
   const loading = useAuthStore((state) => state.loading);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(loginSchema),
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const onSubmit = async (data) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
     try {
-      await login(data);
-
-      toast.success("Login successful");
-
+      if (login) {
+        await login({ email, password });
+      }
       navigate("/dashboard");
-    } catch (error) {
-      toast.error(error?.message || "Login failed");
+    } catch (err) {
+      setError("Invalid email or password. Please try again.");
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 font-sans text-white antialiased flex flex-col justify-between">
-      {/* Top Header */}
-      <header className="mx-auto flex w-full max-w-7xl items-center justify-between border-b border-slate-800/80 px-6 py-4">
-        <Link to="/" className="flex items-center space-x-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 font-bold text-white shadow-md shadow-blue-500/20">
-            AI
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 text-slate-900">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-8 shadow-sm">
+        {/* BRANDING */}
+        <div className="text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600 shadow-sm">
+            <Sparkles size={24} />
           </div>
-          <span className="text-xl font-bold tracking-tight text-white">
-            InterviewPro
-          </span>
-        </Link>
+          <h2 className="mt-4 text-2xl font-extrabold text-slate-900">
+            Welcome Back
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Sign in to continue your AI mock interview practice.
+          </p>
+        </div>
 
-        <Link
-          to="/"
-          className="text-sm font-medium text-slate-400 hover:text-white transition"
-        >
-          ← Back to Home
-        </Link>
-      </header>
-
-      {/* Main Login Card */}
-      <main className="flex items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-md border-slate-800 bg-slate-900/80 p-8 shadow-2xl backdrop-blur">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-extrabold tracking-tight text-white">
-              Welcome back
-            </h1>
-
-            <p className="mt-2 text-sm text-slate-400">
-              Login to continue your interview preparation
-            </p>
+        {error && (
+          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-center text-xs font-semibold text-red-600">
+            {error}
           </div>
+        )}
 
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="space-y-5"
-          >
-            <div>
-              <label className="block mb-2 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Email
-              </label>
-
-              <Input
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <div>
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
+              Email Address
+            </label>
+            <div className="relative flex items-center">
+              <Mail size={18} className="absolute left-3.5 text-slate-400" />
+              <input
                 type="email"
-                placeholder="name@company.com"
-                className="bg-slate-950 border-slate-800 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500"
-                {...register("email")}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="candidate@example.com"
+                required
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none"
               />
-
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-400">
-                  {errors.email.message}
-                </p>
-              )}
             </div>
-
-            <div>
-              <label className="block mb-2 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Password
-              </label>
-
-              <Input
-                type="password"
-                placeholder="••••••••"
-                className="bg-slate-950 border-slate-800 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500"
-                {...register("password")}
-              />
-
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-400">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/25"
-              disabled={loading}
-            >
-              {loading ? "Logging in..." : "Login"}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center text-sm text-slate-400">
-            Don't have an account?{" "}
-
-            <Link
-              to="/register"
-              className="font-semibold text-blue-400 hover:underline"
-            >
-              Create an account
-            </Link>
           </div>
-        </Card>
-      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} InterviewPro. All rights reserved.
-      </footer>
+          <div>
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
+              Password
+            </label>
+            <div className="relative flex items-center">
+              <Lock size={18} className="absolute left-3.5 text-slate-400" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500 active:scale-95 disabled:opacity-50"
+          >
+            {loading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <>
+                Sign In <ArrowRight size={16} />
+              </>
+            )}
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-xs text-slate-500">
+          Don't have an account?{" "}
+          <Link
+            to="/register"
+            className="font-bold text-blue-600 hover:text-blue-700"
+          >
+            Register
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
-
-export default Login;

@@ -49,19 +49,19 @@ function Sidebar() {
   ];
 
   return (
-    <div className="flex h-full w-full flex-col border-r border-slate-800/80 bg-slate-950 text-white">
+    <div className="flex h-full w-full flex-col border-r border-slate-200 bg-white text-slate-900">
       {/* Logo */}
-      <div className="flex h-24 shrink-0 items-center border-b border-slate-800/80 px-6">
+      <div className="flex h-24 shrink-0 items-center border-b border-slate-100 px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/20">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-600/20">
             <Sparkles size={22} />
           </div>
 
           <div>
-            <h1 className="text-lg font-bold text-white">
+            <h1 className="text-lg font-bold text-slate-900">
               AI Interview
             </h1>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               Smart interview practice
             </p>
           </div>
@@ -85,8 +85,8 @@ function Sidebar() {
                 className={({ isActive }) =>
                   `group flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold transition-all ${
                     isActive
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                      : "text-slate-400 hover:bg-slate-900 hover:text-white"
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`
                 }
               >
@@ -98,7 +98,7 @@ function Sidebar() {
                         className={
                           isActive
                             ? "text-white"
-                            : "text-slate-400 group-hover:text-white"
+                            : "text-slate-400 group-hover:text-slate-700"
                         }
                       />
                       <span>{item.name}</span>
@@ -117,11 +117,11 @@ function Sidebar() {
       <div className="flex-1" />
 
       {/* Logout */}
-      <div className="border-t border-slate-800/80 p-3">
+      <div className="border-t border-slate-100 p-3">
         <button
           type="button"
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-600"
         >
           <LogOut size={19} />
           <span>Logout</span>

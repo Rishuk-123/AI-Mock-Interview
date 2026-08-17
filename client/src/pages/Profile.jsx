@@ -31,7 +31,6 @@ function Profile() {
     skills: "",
   });
 
-  // Populate local form state when user object loads or modal opens
   useEffect(() => {
     if (user) {
       setFormData({
@@ -50,7 +49,6 @@ function Profile() {
   const email = user?.email || "john.doe@example.com";
   const initial = fullName?.charAt(0)?.toUpperCase() || "U";
 
-  // Dynamic user data with fallbacks
   const academic = {
     college: user?.college || "NIT Jalandhar",
     degree: user?.degree || "B.Tech",
@@ -76,8 +74,6 @@ function Profile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Convert comma-separated string back to an array of trimmed skill strings
     const skillsArray = formData.skills
       .split(",")
       .map((s) => s.trim())
@@ -96,48 +92,47 @@ function Profile() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-slate-950 text-white">
-        <div className="w-full px-5 py-6 sm:px-7 lg:px-8">
+      <div className="min-h-screen bg-slate-50 text-slate-900">
+        <div className="w-full px-5 py-8 sm:px-7 lg:px-8">
           {/* HEADER */}
-          <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight text-white">
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
                 Profile
               </h1>
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="mt-1 text-sm text-slate-500">
                 Manage your personal, academic, and technical information.
               </p>
             </div>
 
-            {/* EDIT PROFILE BUTTON */}
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500 active:scale-95"
+              className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500 active:scale-95"
             >
               <Pencil size={16} />
               Edit Profile
             </button>
           </div>
 
-          {/* MAIN PROFILE CARD */}
-          <div className="w-full overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900/80 shadow-lg backdrop-blur">
-            {/* PROFILE BANNER / HEADER */}
+          {/* MAIN CARD */}
+          <div className="w-full rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+            {/* BANNER */}
             <div className="flex flex-col gap-5 px-7 py-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-5">
-                <div className="flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full border border-blue-800/50 bg-blue-950/80 text-3xl font-bold text-blue-400 uppercase">
+                <div className="flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full bg-blue-600 text-3xl font-bold uppercase text-white shadow-md">
                   {initial}
                 </div>
 
                 <div>
-                  <h2 className="text-2xl font-bold text-white">
+                  <h2 className="text-2xl font-bold text-slate-900">
                     {fullName}
                   </h2>
-                  <p className="mt-0.5 text-sm font-medium text-slate-400 capitalize">
+                  <p className="mt-0.5 text-sm font-medium capitalize text-slate-500">
                     {user?.role || "Candidate"}
                   </p>
 
-                  <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">
+                  <div className="mt-2 flex items-center gap-2 text-sm text-slate-600">
                     <Mail size={16} />
                     <span>{email}</span>
                   </div>
@@ -149,21 +144,21 @@ function Profile() {
                   Account Status
                 </p>
                 <div className="mt-1.5 flex items-center gap-2 sm:justify-end">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-sm font-semibold text-emerald-400">
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-sm font-semibold text-emerald-600">
                     Account Active
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="h-px bg-slate-800/80" />
+            <div className="h-px bg-slate-100" />
 
-            {/* PERSONAL INFORMATION */}
+            {/* PERSONAL INFO */}
             <section className="px-7 py-6">
               <SectionTitle
                 title="Personal Information"
-                description="Your basic account information."
+                description="Your basic account details."
               />
 
               <div className="mt-6 grid grid-cols-1 gap-x-20 gap-y-7 md:grid-cols-2">
@@ -184,12 +179,12 @@ function Profile() {
                       Password
                     </p>
                     <div className="mt-1 flex items-center gap-3">
-                      <span className="text-sm font-semibold tracking-[3px] text-white">
+                      <span className="text-sm font-semibold tracking-[3px] text-slate-900">
                         ••••••••
                       </span>
                       <button
                         type="button"
-                        className="text-sm font-medium text-blue-400 transition hover:text-blue-300"
+                        className="text-sm font-medium text-blue-600 hover:text-blue-700"
                       >
                         Change
                       </button>
@@ -205,7 +200,7 @@ function Profile() {
               </div>
             </section>
 
-            <div className="h-px bg-slate-800/80" />
+            <div className="h-px bg-slate-100" />
 
             {/* EDUCATION */}
             <section className="px-7 py-6">
@@ -233,7 +228,7 @@ function Profile() {
               </div>
             </section>
 
-            <div className="h-px bg-slate-800/80" />
+            <div className="h-px bg-slate-100" />
 
             {/* TECHNICAL SKILLS */}
             <section className="px-7 py-6">
@@ -242,10 +237,10 @@ function Profile() {
                   <Code2 size={19} />
                 </IconContainer>
                 <div>
-                  <h3 className="text-lg font-bold text-white">
+                  <h3 className="text-lg font-bold text-slate-900">
                     Technical Skills
                   </h3>
-                  <p className="mt-1 text-sm text-slate-400">
+                  <p className="mt-1 text-sm text-slate-500">
                     Technologies and skills in your profile.
                   </p>
                 </div>
@@ -255,7 +250,7 @@ function Profile() {
                 {skills.map((skill) => (
                   <span
                     key={skill}
-                    className="rounded-lg border border-blue-800/50 bg-blue-950/60 px-3 py-1.5 text-xs font-semibold uppercase text-blue-400"
+                    className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase text-blue-700"
                   >
                     {skill}
                   </span>
@@ -263,7 +258,7 @@ function Profile() {
               </div>
             </section>
 
-            <div className="h-px bg-slate-800/80" />
+            <div className="h-px bg-slate-100" />
 
             {/* ADDITIONAL INFORMATION */}
             <section className="px-7 py-6">
@@ -299,16 +294,18 @@ function Profile() {
         </div>
       </div>
 
-      {/* EDIT PROFILE MODAL */}
+      {/* EDIT MODAL */}
       {isEditing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h2 className="text-xl font-bold text-white">Edit Profile Details</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <h2 className="text-xl font-bold text-slate-900">
+                Edit Profile Details
+              </h2>
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
               >
                 <X size={20} />
               </button>
@@ -316,7 +313,7 @@ function Profile() {
 
             <form onSubmit={handleSubmit} className="mt-5 space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                   Full Name
                 </label>
                 <input
@@ -325,13 +322,13 @@ function Profile() {
                   value={formData.fullName}
                   onChange={handleInputChange}
                   required
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                     College / University
                   </label>
                   <input
@@ -339,12 +336,12 @@ function Profile() {
                     name="college"
                     value={formData.college}
                     onChange={handleInputChange}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                     Degree
                   </label>
                   <input
@@ -352,13 +349,13 @@ function Profile() {
                     name="degree"
                     value={formData.degree}
                     onChange={handleInputChange}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                   Graduation Year
                 </label>
                 <input
@@ -366,12 +363,12 @@ function Profile() {
                   name="graduationYear"
                   value={formData.graduationYear}
                   onChange={handleInputChange}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                   Skills (Comma-separated)
                 </label>
                 <input
@@ -380,15 +377,15 @@ function Profile() {
                   value={formData.skills}
                   onChange={handleInputChange}
                   placeholder="React, Node.js, Express, MongoDB"
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white"
+                  className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
                 >
                   <X size={16} /> Cancel
                 </button>
@@ -396,7 +393,7 @@ function Profile() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500 disabled:opacity-50"
                 >
                   {loading ? (
                     <Loader2 size={16} className="animate-spin" />
@@ -414,13 +411,11 @@ function Profile() {
   );
 }
 
-/* SUBCOMPONENTS */
-
 function SectionTitle({ title, description }) {
   return (
     <div>
-      <h3 className="text-lg font-bold text-white">{title}</h3>
-      <p className="mt-1 text-sm text-slate-400">{description}</p>
+      <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+      <p className="mt-1 text-sm text-slate-500">{description}</p>
     </div>
   );
 }
@@ -435,7 +430,7 @@ function Info({ icon: IconComponent, label, value }) {
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
           {label}
         </p>
-        <p className="mt-1 text-sm font-semibold text-white">{value}</p>
+        <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
       </div>
     </div>
   );
@@ -443,7 +438,7 @@ function Info({ icon: IconComponent, label, value }) {
 
 function IconContainer({ children }) {
   return (
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-blue-400">
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-blue-600">
       {children}
     </div>
   );
