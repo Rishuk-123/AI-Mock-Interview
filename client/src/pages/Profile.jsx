@@ -93,9 +93,9 @@ function Profile() {
   return (
     <MainLayout>
       <div className="min-h-screen bg-slate-50 text-slate-900">
-        <div className="w-full px-5 py-8 sm:px-7 lg:px-8">
-          {/* HEADER */}
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mx-auto max-w-7xl px-5 py-8 sm:px-7 lg:px-8">
+          {/* HEADER WITH CORRECTED VERTICAL ALIGNMENT */}
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
                 Profile
@@ -108,7 +108,7 @@ function Profile() {
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500 active:scale-95"
+              className="flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500 active:scale-95"
             >
               <Pencil size={16} />
               Edit Profile
