@@ -14,23 +14,19 @@ const app = express();
 app.use(helmet());
 
 // Dynamic Cross-Origin Resource Sharing
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  "https://ai-mock-interview-alpha-tawny.vercel.app",
-  "http://localhost:5173",
-];
-
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
-    if (!origin) return callback(null, true);
-    
-    // Allow configured CLIENT_URL, production Vercel domain, or any Vercel preview URL
-    if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+    // Allow non-browser requests (like curl or postman) or local development
+    if (!origin || origin.includes("localhost")) {
       return callback(null, true);
     }
-    
-    return callback(new Error("CORS policy violation"));
+
+    // Allow configured CLIENT_URL or ANY Vercel deployment domain (*.vercel.app)
+    if (origin === process.env.CLIENT_URL || origin.endsWith(".vercel.app")) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Blocked by CORS policy"));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -39,7 +35,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Explicitly handle CORS preflight OPTIONS requests across all routes
+// Explicitly handle preflight OPTIONS requests for all endpoints
 app.options("*", cors(corsOptions));
 
 // Logging Middleware
