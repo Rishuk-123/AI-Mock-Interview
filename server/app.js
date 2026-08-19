@@ -13,13 +13,34 @@ const app = express();
 // Security Headers
 app.use(helmet());
 
-// Cross-Origin Resource Sharing
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true,
-  })
-);
+// Dynamic Cross-Origin Resource Sharing
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "https://ai-mock-interview-alpha-tawny.vercel.app",
+  "http://localhost:5173",
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+    if (!origin) return callback(null, true);
+    
+    // Allow configured CLIENT_URL, production Vercel domain, or any Vercel preview URL
+    if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+      return callback(null, true);
+    }
+    
+    return callback(new Error("CORS policy violation"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+
+// Explicitly handle CORS preflight OPTIONS requests across all routes
+app.options("*", cors(corsOptions));
 
 // Logging Middleware
 app.use(morgan("dev"));
