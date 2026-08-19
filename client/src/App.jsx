@@ -14,6 +14,9 @@ import InterviewResults from "./pages/InterviewResults";
 import InterviewHistory from "./pages/InterviewHistory";
 import Profile from "./pages/Profile";
 
+// Sentiment Analysis Component
+import SentimentDashboard from "./pages/SentimentDashboard";
+
 import useAuthStore from "./store/authStore";
 
 function App() {
@@ -38,6 +41,14 @@ function App() {
         }
       />
       <Route
+        path="/sentiment-analyzer"
+        element={
+          <ProtectedRoute>
+            <SentimentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/interview"
         element={
           <ProtectedRoute>
@@ -54,7 +65,7 @@ function App() {
         }
       />
 
-      {/* RESULTS ROUTE MUST BE DEFINED BEFORE /interview/:id */}
+      {/* RESULTS ROUTE DEFINED BEFORE /interview/:id */}
       <Route
         path="/interview/:id/results"
         element={
