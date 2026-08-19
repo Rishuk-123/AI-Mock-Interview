@@ -1,138 +1,128 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Sparkles, User, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
+import useAuthStore from "../store/authStore";
 
 export default function Register() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const register = useAuthStore((state) => state.register);
+  const loading = useAuthStore((state) => state.loading);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
     setError("");
-
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/auth/register`,
-        formData
-      );
-
-      if (response.data.success) {
-        // Save token if your backend returns one, or redirect to login
-        if (response.data.token) {
-          localStorage.setItem("token", response.data.token);
-        }
-        navigate("/login");
+      if (register) {
+        await register({ fullName, email, password });
       }
+      navigate("/dashboard");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Registration failed. Please try again."
-      );
-    } finally {
-      setIsLoading(false);
+      setError("Registration failed. Please check your details.");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4 sm:p-6 lg:p-8">
-      {/* Container scales automatically from mobile (full width) to desktop (max-width) */}
-      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6 sm:p-8">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 text-slate-900">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-8 shadow-sm">
+        <div className="text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600 shadow-sm">
+            <Sparkles size={24} />
+          </div>
+          <h2 className="mt-4 text-2xl font-extrabold text-slate-900">
             Create Account
-          </h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Join AI Mock Interview today
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Start preparing for tech interviews with AI assistance.
           </p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 text-sm rounded-lg text-center">
+          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-center text-xs font-semibold text-red-600">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Full Name
             </label>
-            <input
-              type="text"
-              name="name"
-              required
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="John Doe"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-base"
-            />
+            <div className="relative flex items-center">
+              <User size={18} className="absolute left-3.5 text-slate-400" />
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="John Doe"
+                required
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Email Address
             </label>
-            <input
-              type="email"
-              name="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="you@example.com"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-base"
-            />
+            <div className="relative flex items-center">
+              <Mail size={18} className="absolute left-3.5 text-slate-400" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="candidate@example.com"
+                required
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Password
             </label>
-            <input
-              type="password"
-              name="password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-base"
-            />
+            <div className="relative flex items-center">
+              <Lock size={18} className="absolute left-3.5 text-slate-400" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none"
+              />
+            </div>
           </div>
 
           <button
             type="submit"
-            disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition duration-200 flex items-center justify-center disabled:opacity-50"
+            disabled={loading}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500 active:scale-95 disabled:opacity-50"
           >
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-                Connecting...
-              </span>
+            {loading ? (
+              <Loader2 size={18} className="animate-spin" />
             ) : (
-              "Register"
+              <>
+                Get Started <ArrowRight size={16} />
+              </>
             )}
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-xs text-slate-500">
           Already have an account?{" "}
-          <Link to="/login" className="text-blue-600 hover:underline font-medium">
-            Log in
+          <Link
+            to="/login"
+            className="font-bold text-blue-600 hover:text-blue-700"
+          >
+            Sign In
           </Link>
-        </div>
+        </p>
       </div>
     </div>
   );
