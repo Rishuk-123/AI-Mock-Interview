@@ -10,13 +10,12 @@ import interviewRoutes from "./routes/interviewRoutes.js";
 
 const app = express();
 
-// Security Headers
 app.use(helmet());
 
-// Dynamic Cross-Origin Resource Sharing
+// Dynamic CORS configuration allowing all Vercel origins
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow non-browser requests (like curl or postman) or local development
+    // Allow non-browser requests or local development
     if (!origin || origin.includes("localhost")) {
       return callback(null, true);
     }
@@ -34,19 +33,13 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-// Explicitly handle preflight OPTIONS requests for all endpoints
 app.options("*", cors(corsOptions));
 
-// Logging Middleware
 app.use(morgan("dev"));
-
-// Body Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Base Route & Health Checks
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
@@ -61,12 +54,10 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/interviews", interviewRoutes);
 
-// 404 Handler for undefined routes
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -74,7 +65,6 @@ app.use((req, res) => {
   });
 });
 
-// Global Error Handler
 app.use((err, req, res, next) => {
   console.error("Global Error Handler:", err);
   res.status(err.status || 500).json({
