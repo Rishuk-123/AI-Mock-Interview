@@ -20,7 +20,9 @@ function Navbar() {
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
 
-  const initial = user?.fullName?.charAt(0)?.toUpperCase() || "J";
+  // Fallback check for user.name OR user.fullName
+  const displayName = user?.name || user?.fullName || "User";
+  const initial = displayName.charAt(0).toUpperCase();
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -56,20 +58,20 @@ function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 flex h-[72px] w-full items-center justify-between border-b border-slate-200 bg-white/90 px-6 backdrop-blur lg:px-8">
+    <header className="sticky top-0 z-50 flex h-[72px] w-full items-center justify-between border-b border-slate-200 bg-white/90 px-4 sm:px-6 lg:px-8 backdrop-blur">
       {/* BRANDING */}
       <div className="min-w-0">
         <button
           type="button"
           onClick={() => navigate("/dashboard")}
-          className="flex cursor-pointer items-center gap-3 text-left focus:outline-none"
+          className="flex cursor-pointer items-center gap-2.5 sm:gap-3 text-left focus:outline-none"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600 shadow-sm">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600 shadow-sm">
             <Sparkles size={20} />
           </div>
 
           <div className="min-w-0">
-            <p className="truncate text-base font-bold text-slate-900">
+            <p className="truncate text-sm sm:text-base font-bold text-slate-900">
               AI Mock Interview
             </p>
             <p className="hidden text-xs text-slate-500 sm:block">
@@ -80,7 +82,7 @@ function Navbar() {
       </div>
 
       {/* ACTIONS */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5 sm:gap-3">
         {/* NOTIFICATIONS */}
         <div className="relative" ref={notificationsRef}>
           <button
@@ -141,10 +143,10 @@ function Navbar() {
             <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
               <div className="border-b border-slate-100 px-3 py-2.5">
                 <p className="truncate text-sm font-semibold text-slate-900">
-                  {user?.fullName || "John"}
+                  {displayName}
                 </p>
                 <p className="truncate text-xs text-slate-500">
-                  {user?.email || "john123@gmail.com"}
+                  {user?.email || "candidate@example.com"}
                 </p>
               </div>
 
