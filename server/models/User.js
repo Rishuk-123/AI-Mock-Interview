@@ -28,6 +28,13 @@ const userSchema = new mongoose.Schema(
       default: "candidate",
     },
 
+    // Added Credits Field
+    credits: {
+      type: Number,
+      default: 3, // New users start with 3 free interview credits
+      min: 0,
+    },
+
     profileImage: {
       type: String,
       default: "",

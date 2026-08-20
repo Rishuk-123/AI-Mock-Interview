@@ -7,7 +7,8 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
-
+import paymentRoutes from "./routes/payment.js";
+app.use("/api/payment", paymentRoutes);
 const app = express();
 
 // Security Headers
