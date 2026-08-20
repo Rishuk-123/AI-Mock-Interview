@@ -4,12 +4,16 @@ import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 
+import connectDB from "./config/db.js"; // Database connection
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
 import paymentRoutes from "./routes/payment.js";
-app.use("/api/payment", paymentRoutes);
+
 const app = express();
+
+// Connect to MongoDB
+connectDB();
 
 // Security Headers
 app.use(helmet());
@@ -64,6 +68,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/interviews", interviewRoutes);
+app.use("/api/payment", paymentRoutes);
 
 // 404 Handler for undefined routes (using valid Express v5 syntax)
 app.use((req, res) => {
