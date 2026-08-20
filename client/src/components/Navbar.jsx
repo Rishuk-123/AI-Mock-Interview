@@ -6,20 +6,16 @@ import {
   LogOut,
   User as UserIcon,
   X,
-  Coins,
 } from "lucide-react";
-import axios from "axios";
 import useAuthStore from "../store/authStore";
 
 function Navbar() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const updateUser = useAuthStore((state) => state.setUser || state.updateUser);
   const logout = useAuthStore((state) => state.logout);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isPaying, setIsPaying] = useState(false);
 
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
@@ -62,65 +58,6 @@ function Navbar() {
     navigate("/login");
   };
 
-  // Razorpay Payment Handler
-  const handleBuyCredits = async () => {
-    setIsPaying(true);
-    const baseURL =
-      import.meta.env.VITE_API_URL || "https://ai-mock-interview-kn7p.onrender.com";
-
-    try {
-      // 1. Create payment order on backend (e.g., ₹199 for 10 credits)
-      const { data } = await axios.post(`${baseURL}/api/payment/create-order`, {
-        amount: 199,
-      });
-
-      if (!data.success) throw new Error("Order creation failed");
-
-      // 2. Open Razorpay modal
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: data.order.amount,
-        currency: "INR",
-        name: "AI Mock Interview",
-        description: "Purchase 10 Interview Credits",
-        order_id: data.order.id,
-        handler: async (response) => {
-          // 3. Verify signature on backend
-          const verifyRes = await axios.post(
-            `${baseURL}/api/payment/verify-payment`,
-            {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              userId: user?._id || user?.id,
-              creditsToAdd: 10,
-            }
-          );
-
-          if (verifyRes.data.success) {
-            alert(`Payment successful! New Credit Balance: ${verifyRes.data.credits}`);
-            // Update auth state with new credit total if store update function exists
-            if (updateUser) {
-              updateUser({ ...user, credits: verifyRes.data.credits });
-            } else {
-              window.location.reload();
-            }
-          }
-        },
-        theme: {
-          color: "#2563eb",
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (err) {
-      alert(err.response?.data?.message || err.message || "Payment initiation failed");
-    } finally {
-      setIsPaying(false);
-    }
-  };
-
   return (
     <header className="sticky top-0 z-50 flex h-[72px] w-full items-center justify-between border-b border-slate-200 bg-white/90 px-4 sm:px-6 lg:px-8 backdrop-blur">
       {/* BRANDING */}
@@ -147,21 +84,19 @@ function Navbar() {
 
       {/* ACTIONS */}
       <div className="flex items-center gap-2.5 sm:gap-3">
-        {/* CREDITS BADGE & BUY BUTTON */}
-        <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
-          <div className="flex items-center gap-1.5 px-2 text-xs font-semibold text-slate-700">
-            <Coins size={16} className="text-amber-500" />
-            <span>{credits} Credits</span>
+        {/* CREDITS BADGE (ROUNDED PILL CONTAINER) */}
+        <button
+          type="button"
+          onClick={() => navigate("/pricing")}
+          className="flex items-center gap-2.5 bg-slate-100 hover:bg-slate-200/80 px-4 py-2 rounded-full border border-slate-200/80 transition cursor-pointer active:scale-95"
+        >
+          <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-slate-800 bg-white text-slate-900 font-bold text-xs shadow-xs">
+            $
           </div>
-          <button
-            type="button"
-            onClick={handleBuyCredits}
-            disabled={isPaying}
-            className="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition shadow-sm disabled:opacity-50"
-          >
-            {isPaying ? "..." : "+ Buy"}
-          </button>
-        </div>
+          <span className="text-sm font-semibold text-slate-800">
+            {credits}
+          </span>
+        </button>
 
         {/* NOTIFICATIONS */}
         <div className="relative" ref={notificationsRef}>

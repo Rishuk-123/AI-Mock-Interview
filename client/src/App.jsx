@@ -1,4 +1,3 @@
-// src/App.jsx
 import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import Resume from "./pages/Resume";
@@ -13,6 +12,7 @@ import InterviewRoom from "./pages/InterviewRoom";
 import InterviewResults from "./pages/InterviewResults";
 import InterviewHistory from "./pages/InterviewHistory";
 import Profile from "./pages/Profile";
+import Pricing from "./pages/Pricing";
 
 import useAuthStore from "./store/authStore";
 
@@ -86,6 +86,16 @@ function App() {
         element={
           <ProtectedRoute>
             <Resume />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Pricing Route */}
+      <Route
+        path="/pricing"
+        element={
+          <ProtectedRoute>
+            <Pricing />
           </ProtectedRoute>
         }
       />
