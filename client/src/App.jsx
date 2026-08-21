@@ -37,6 +37,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/interview"
         element={
@@ -45,6 +46,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/profile"
         element={
@@ -54,7 +56,7 @@ function App() {
         }
       />
 
-      {/* RESULTS ROUTE MUST BE DEFINED BEFORE /interview/:id */}
+      {/* RESULTS ROUTE DEFINED BEFORE DYNAMIC ID ROUTE */}
       <Route
         path="/interview/:id/results"
         element={
@@ -64,6 +66,7 @@ function App() {
         }
       />
 
+      {/* LIVE INTERVIEW SESSION ROOM */}
       <Route
         path="/interview/:id"
         element={
@@ -81,6 +84,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/resume"
         element={
@@ -90,7 +94,6 @@ function App() {
         }
       />
 
-      {/* Pricing Route */}
       <Route
         path="/pricing"
         element={
