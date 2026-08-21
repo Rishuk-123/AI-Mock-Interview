@@ -7,12 +7,30 @@ import {
   submitAnswer,
   finishInterview,
   evaluateInterviewAnswer,
+  generateQuestions,
+  evaluateFullInterview,
 } from "../controllers/interviewController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Create a new interview session (validates & deducts 1 credit)
+// ============================================================================
+// DYNAMIC AI & REAL-TIME EVALUATION ROUTES
+// ============================================================================
+
+// Dynamic question generation endpoints
+router.post("/generate-questions", generateQuestions);
+router.post("/frontend-questions", generateQuestions);
+router.post("/backend-questions", generateQuestions);
+
+// Full interview analysis, scoring, and feedback generation
+router.post("/evaluate", evaluateFullInterview);
+
+// ============================================================================
+// DATABASE PERSISTENCE INTERVIEW ROUTES
+// ============================================================================
+
+// Create a new interview session
 router.post("/", authMiddleware, createInterview);
 
 // Fetch all interviews belonging to the logged-in user

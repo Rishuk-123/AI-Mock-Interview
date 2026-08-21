@@ -64,13 +64,14 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// API Routes
+// API Routes (Mounted for both singular and plural paths to match frontend calls)
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/interview", interviewRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/payment", paymentRoutes);
 
-// 404 Handler for undefined routes (using valid Express v5 syntax)
+// 404 Handler for undefined routes
 app.use((req, res) => {
   res.status(404).json({
     success: false,

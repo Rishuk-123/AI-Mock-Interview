@@ -13,30 +13,6 @@ import {
 import MainLayout from "../layouts/MainLayout";
 import useInterviewStore from "../store/useInterviewStore";
 
-const QUESTION_BANKS = {
-  frontend: [
-    "Can you explain the Virtual DOM in React and how it optimizes UI updates?",
-    "What is the difference between state and props in React?",
-    "How do React hooks like useEffect work, and how do you handle cleanup?",
-    "Explain the concept of closures in JavaScript with a practical example.",
-    "How would you optimize the performance of a large-scale React application?",
-  ],
-  backend: [
-    "How do indexing and query execution plans work in relational databases?",
-    "Explain the difference between synchronous and asynchronous I/O in Node.js or Python.",
-    "How do you design a secure authentication system using JWTs and refresh tokens?",
-    "What are ACID properties in databases, and how do NOSQL databases handle consistency?",
-    "How do you handle rate limiting and caching with Redis in a backend service?",
-  ],
-  default: [
-    "Tell me about a challenging technical project you worked on recently.",
-    "How do you approach debugging a high-priority bug in production?",
-    "Explain how you prioritize technical debt versus building new features.",
-    "How do you ensure code quality and write effective unit tests?",
-    "Describe a time you had to make an architectural tradeoff under tight deadlines.",
-  ],
-};
-
 export default function InterviewRoom() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -45,14 +21,13 @@ export default function InterviewRoom() {
 
   const setupConfig = location.state || {
     role: "Frontend Developer",
-    company: "Tech Corp",
     type: "Technical",
     difficulty: "Medium",
   };
 
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState(["", "", "", "", ""]);
+  const [answers, setAnswers] = useState([]);
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -63,10 +38,10 @@ export default function InterviewRoom() {
 
   // Speak Question Logic
   const speakQuestion = (text) => {
-    if (!("speechSynthesis" in window)) return;
+    if (!("speechSynthesis" in window) || !text) return;
 
     window.speechSynthesis.cancel();
-    
+
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.95;
     utterance.pitch = 1;
@@ -90,40 +65,62 @@ export default function InterviewRoom() {
     }
   }, []);
 
+  const role = setupConfig.role || "Software Developer";
+  const difficulty = setupConfig.difficulty || "Medium";
+  const type = setupConfig.type || "Technical";
+
+  // Fetch Dynamic Questions from API
   useEffect(() => {
-    setLoading(true);
-    const roleLower = setupConfig.role?.toLowerCase() || "";
-    let selectedBank = QUESTION_BANKS.default;
+    const fetchDynamicQuestions = async () => {
+      setLoading(true);
 
-    if (
-      roleLower.includes("backend") ||
-      roleLower.includes("node") ||
-      roleLower.includes("java")
-    ) {
-      selectedBank = QUESTION_BANKS.backend;
-    } else if (
-      roleLower.includes("frontend") ||
-      roleLower.includes("react") ||
-      roleLower.includes("web")
-    ) {
-      selectedBank = QUESTION_BANKS.frontend;
-    }
+      const baseUrl = import.meta.env.VITE_API_URL || "https://ai-mock-interview-kn7p.onrender.com";
+      const apiUrl = `${baseUrl}/api/interviews/generate-questions`;
 
-    setQuestions(selectedBank);
-    setAnswers(Array(selectedBank.length).fill(""));
-    setLoading(false);
-  }, [setupConfig]);
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role, difficulty, type }),
+        });
 
+        const data = await response.json();
+
+        if (response.ok && data.questions && data.questions.length > 0) {
+          setQuestions(data.questions);
+          setAnswers(Array(data.questions.length).fill(""));
+        } else {
+          throw new Error("No questions returned from API");
+        }
+      } catch (error) {
+        console.error("Failed to fetch dynamic questions, using fallback:", error);
+        const fallbackQuestions = [
+          `Can you explain your background and core technical skills as a ${role}?`,
+          "Describe a challenging technical problem you recently solved in your projects.",
+          "How do you handle debugging and optimization in a production environment?",
+          "What processes do you follow to ensure your code is maintainable and well-tested?",
+        ];
+        setQuestions(fallbackQuestions);
+        setAnswers(Array(fallbackQuestions.length).fill(""));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDynamicQuestions();
+  }, [role, difficulty, type]);
+
+  // Trigger speech synthesis only when currentIndex or questions array changes
   useEffect(() => {
-    const val = answers[currentIndex] || "";
-    setCurrentAnswer(val);
-    baseTextRef.current = val;
-
-    if (questions[currentIndex]) {
+    if (questions.length > 0 && questions[currentIndex]) {
+      const val = answers[currentIndex] || "";
+      setCurrentAnswer(val);
+      baseTextRef.current = val;
       speakQuestion(questions[currentIndex]);
     }
   }, [currentIndex, questions]);
 
+  // Speech Recognition
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -266,7 +263,7 @@ export default function InterviewRoom() {
                   if (window.speechSynthesis) window.speechSynthesis.cancel();
                   navigate("/history");
                 }}
-                className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100"
+                className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 cursor-pointer"
               >
                 <ArrowLeft size={16} /> Leave
               </button>
@@ -275,7 +272,7 @@ export default function InterviewRoom() {
                   Question {currentIndex + 1} of {questions.length}
                 </span>
                 <h1 className="mt-1 text-xl font-extrabold text-slate-900 sm:text-2xl">
-                  {setupConfig.role} Session
+                  {role} Session
                 </h1>
               </div>
             </div>
@@ -286,13 +283,13 @@ export default function InterviewRoom() {
                 if (window.speechSynthesis) window.speechSynthesis.cancel();
                 navigate("/history");
               }}
-              className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-100"
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-100 cursor-pointer"
             >
               End Interview
             </button>
           </div>
 
-          {/* MAIN TWO-COLUMN GRID */}
+          {/* MAIN GRID */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             {/* LEFT COLUMN: AVATAR & QUESTION DISPLAY */}
             <div className="lg:col-span-5 flex flex-col gap-4">
@@ -309,7 +306,7 @@ export default function InterviewRoom() {
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                     Interviewer Status
                   </span>
-                  
+
                   <button
                     type="button"
                     onClick={() => speakQuestion(currentQuestion)}
@@ -337,9 +334,7 @@ export default function InterviewRoom() {
                       <User size={18} />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-slate-900">
-                        Your Answer
-                      </h3>
+                      <h3 className="text-sm font-bold text-slate-900">Your Answer</h3>
                       <p className="text-xs text-slate-500">
                         {isListening ? "Recording... Speak now" : "Type or speak your response"}
                       </p>

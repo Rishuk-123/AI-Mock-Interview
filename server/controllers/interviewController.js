@@ -1,7 +1,124 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import Interview from "../models/Interview.js";
 import evaluateAnswer from "../services/aiService.js";
 
-// Helper to generate context-aware questions
+// Initialize Gemini with API Key
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// ============================================================================
+// STANDALONE AI HELPER CONTROLLERS (Unsaved / Frontend Real-time Sessions)
+// ============================================================================
+
+// @desc    Generate dynamic interview questions via Gemini AI
+// @route   POST /api/interview/generate-questions
+// @access  Public / Private
+export const generateQuestions = async (req, res) => {
+  try {
+    const { role = "Software Engineer", difficulty = "Medium", type = "Technical" } = req.body;
+
+    const prompt = `You are an expert technical interviewer. Generate 4 distinct, high-quality ${type} interview questions for a candidate applying for a "${role}" position at a ${difficulty} difficulty level.
+
+Return ONLY a JSON array of strings containing the questions.
+Example output: ["Question 1?", "Question 2?", "Question 3?", "Question 4?"]`;
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const response = await model.generateContent(prompt);
+    const text = response.response.text();
+    const questions = JSON.parse(text);
+
+    return res.status(200).json({
+      success: true,
+      questions,
+    });
+  } catch (error) {
+    console.error("Generate questions error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate dynamic interview questions.",
+    });
+  }
+};
+
+// @desc    Evaluate full interview session & generate focus areas / per-question feedback
+// @route   POST /api/interview/evaluate
+// @access  Public / Private
+export const evaluateFullInterview = async (req, res) => {
+  try {
+    const { questions, answers, role = "Software Developer" } = req.body;
+
+    if (!questions || !answers || !Array.isArray(questions) || !Array.isArray(answers)) {
+      return res.status(400).json({
+        success: false,
+        message: "Questions and answers arrays are required.",
+      });
+    }
+
+    const formattedQnA = questions
+      .map((q, i) => `Q${i + 1}: ${q}\nCandidate Answer: ${answers[i] || "No answer provided"}`)
+      .join("\n\n");
+
+    const prompt = `You are an expert technical interviewer evaluating a candidate for a "${role}" role.
+
+Analyze the following interview questions and candidate answers carefully:
+${formattedQnA}
+
+Evaluation Guidelines:
+1. Accurately score answers based on technical depth, relevance, and accuracy.
+2. If the user provides solid, accurate technical explanations (e.g., mentioning React, TypeScript, state management, memoization, browser devtools), reward them with high scores (75-95).
+3. If an answer is random gibberish (e.g. "ekcnkrmlo", "kVN KFNIV"), penalize that specific question with low score and explain that it is unreadable.
+4. "score": Calculate a global composite score from 0 to 100 reflecting overall performance.
+5. "level": Return "Needs Improvement" (below 50), "Intermediate" (50-74), or "Proficient" (75-100).
+6. "focusAreas": Provide 2-4 specific bullet points on key topics the candidate should study or expand upon.
+7. "feedback": Provide an array of helpful, constructive feedback strings corresponding EXACTLY to each question in order (length must be ${questions.length}).
+
+Return ONLY a valid JSON object matching this schema:
+{
+  "score": 85,
+  "level": "Proficient",
+  "focusAreas": ["Mention specific state management tools like Redux or Zustand", "Elaborate on performance metrics when discussing optimization"],
+  "feedback": [
+    "Great overview of core frontend technologies like React and TypeScript. Good mention of writing clean code.",
+    "Solid explanation of React optimization techniques including memoization and component restructuring.",
+    "Good workflow steps using DevTools and logs for debugging production environments."
+  ]
+}`;
+
+    // Force JSON output via generationConfig
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const response = await model.generateContent(prompt);
+    const text = response.response.text();
+    const evaluation = JSON.parse(text);
+
+    return res.status(200).json({
+      success: true,
+      evaluation,
+    });
+  } catch (error) {
+    console.error("Evaluate full interview error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to evaluate full interview session.",
+      error: error.message,
+    });
+  }
+};
+
+// ============================================================================
+// DATABASE PERSISTENCE CONTROLLERS (Saved User Interviews)
+// ============================================================================
+
 const generateDefaultQuestions = (role, company, interviewType, difficulty) => {
   const companyPrefix = company ? `at ${company}` : "";
   const level = difficulty || "Intermediate";
@@ -25,9 +142,6 @@ const generateDefaultQuestions = (role, company, interviewType, difficulty) => {
   ];
 };
 
-// @desc    Create a new interview session
-// @route   POST /api/interviews
-// @access  Private
 export const createInterview = async (req, res) => {
   try {
     const { role, company, interviewType, difficulty } = req.body;
@@ -62,9 +176,6 @@ export const createInterview = async (req, res) => {
   }
 };
 
-// @desc    Get all interviews for logged-in user
-// @route   GET /api/interviews
-// @access  Private
 export const getMyInterviews = async (req, res) => {
   try {
     const interviews = await Interview.find({ user: req.user.id }).sort({
@@ -84,9 +195,6 @@ export const getMyInterviews = async (req, res) => {
   }
 };
 
-// @desc    Get single interview details by ID
-// @route   GET /api/interviews/:id
-// @access  Private
 export const getInterviewById = async (req, res) => {
   try {
     const interview = await Interview.findOne({
@@ -114,9 +222,6 @@ export const getInterviewById = async (req, res) => {
   }
 };
 
-// @desc    Start an interview & populate initial questions
-// @route   POST /api/interviews/:id/start
-// @access  Private
 export const startInterview = async (req, res) => {
   try {
     const interview = await Interview.findOne({
@@ -173,9 +278,6 @@ export const startInterview = async (req, res) => {
   }
 };
 
-// @desc    Submit answer for a specific question index
-// @route   POST /api/interviews/:id/answer
-// @access  Private
 export const submitAnswer = async (req, res) => {
   try {
     const { questionIndex, answer } = req.body;
@@ -230,9 +332,6 @@ export const submitAnswer = async (req, res) => {
   }
 };
 
-// @desc    Evaluate individual question answer via AI
-// @route   POST /api/interviews/:id/evaluate
-// @access  Private
 export const evaluateInterviewAnswer = async (req, res) => {
   try {
     const { questionIndex } = req.body;
@@ -302,9 +401,6 @@ export const evaluateInterviewAnswer = async (req, res) => {
   }
 };
 
-// @desc    Complete interview session & calculate overall score
-// @route   POST /api/interviews/:id/finish
-// @access  Private
 export const finishInterview = async (req, res) => {
   try {
     const interview = await Interview.findOne({

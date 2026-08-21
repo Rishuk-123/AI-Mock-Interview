@@ -4,7 +4,9 @@ import app from "./app.js";
 import connectDB from "./config/db.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
 
-app.use("/api/interviews", interviewRoutes);
+// Mount interview routes
+app.use("/api/interview", interviewRoutes);
+app.use("/api/interviews", interviewRoutes); // Kept for backwards compatibility
 
 const PORT = process.env.PORT || 5000;
 
@@ -19,7 +21,6 @@ const startServer = async () => {
     console.error("Failed to start server:", error);
     process.exit(1);
   }
-  //
 };
 
 startServer();
