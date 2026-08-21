@@ -2,16 +2,20 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import Interview from "../models/Interview.js";
 import evaluateAnswer from "../services/aiService.js";
 
-// Initialize Gemini with API Key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+const safeJsonParse = (text) => {
+  const cleanText = text
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+  return JSON.parse(cleanText);
+};
+
 // ============================================================================
-// STANDALONE AI HELPER CONTROLLERS (Unsaved / Frontend Real-time Sessions)
+// STANDALONE AI HELPER CONTROLLERS
 // ============================================================================
 
-// @desc    Generate dynamic interview questions via Gemini AI
-// @route   POST /api/interview/generate-questions
-// @access  Public / Private
 export const generateQuestions = async (req, res) => {
   try {
     const { role = "Software Engineer", difficulty = "Medium", type = "Technical" } = req.body;
@@ -21,8 +25,9 @@ export const generateQuestions = async (req, res) => {
 Return ONLY a JSON array of strings containing the questions.
 Example output: ["Question 1?", "Question 2?", "Question 3?", "Question 4?"]`;
 
+    // UPDATED MODEL STRING
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.6-flash",
       generationConfig: {
         responseMimeType: "application/json",
       },
@@ -30,7 +35,7 @@ Example output: ["Question 1?", "Question 2?", "Question 3?", "Question 4?"]`;
 
     const response = await model.generateContent(prompt);
     const text = response.response.text();
-    const questions = JSON.parse(text);
+    const questions = safeJsonParse(text);
 
     return res.status(200).json({
       success: true,
@@ -41,13 +46,11 @@ Example output: ["Question 1?", "Question 2?", "Question 3?", "Question 4?"]`;
     return res.status(500).json({
       success: false,
       message: "Failed to generate dynamic interview questions.",
+      error: error.message,
     });
   }
 };
 
-// @desc    Evaluate full interview session & generate focus areas / per-question feedback
-// @route   POST /api/interview/evaluate
-// @access  Public / Private
 export const evaluateFullInterview = async (req, res) => {
   try {
     const { questions, answers, role = "Software Developer" } = req.body;
@@ -71,7 +74,7 @@ ${formattedQnA}
 Evaluation Guidelines:
 1. Accurately score answers based on technical depth, relevance, and accuracy.
 2. If the user provides solid, accurate technical explanations (e.g., mentioning React, TypeScript, state management, memoization, browser devtools), reward them with high scores (75-95).
-3. If an answer is random gibberish (e.g. "ekcnkrmlo", "kVN KFNIV"), penalize that specific question with low score and explain that it is unreadable.
+3. If an answer is random gibberish (e.g. "ekcnkrmlo", "kVN KFNIV"), penalize that specific question with a low score and explain that it is unreadable.
 4. "score": Calculate a global composite score from 0 to 100 reflecting overall performance.
 5. "level": Return "Needs Improvement" (below 50), "Intermediate" (50-74), or "Proficient" (75-100).
 6. "focusAreas": Provide 2-4 specific bullet points on key topics the candidate should study or expand upon.
@@ -89,9 +92,9 @@ Return ONLY a valid JSON object matching this schema:
   ]
 }`;
 
-    // Force JSON output via generationConfig
+    // UPDATED MODEL STRING
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.6-flash",
       generationConfig: {
         responseMimeType: "application/json",
       },
@@ -99,7 +102,7 @@ Return ONLY a valid JSON object matching this schema:
 
     const response = await model.generateContent(prompt);
     const text = response.response.text();
-    const evaluation = JSON.parse(text);
+    const evaluation = safeJsonParse(text);
 
     return res.status(200).json({
       success: true,
@@ -116,7 +119,7 @@ Return ONLY a valid JSON object matching this schema:
 };
 
 // ============================================================================
-// DATABASE PERSISTENCE CONTROLLERS (Saved User Interviews)
+// DATABASE PERSISTENCE CONTROLLERS
 // ============================================================================
 
 const generateDefaultQuestions = (role, company, interviewType, difficulty) => {

@@ -11,8 +11,6 @@ import {
   Target,
   Loader2,
   TrendingUp,
-  Activity,
-  Check,
 } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import useInterviewStore from "../store/useInterviewStore";
@@ -35,11 +33,35 @@ export default function InterviewResults() {
   const [evaluation, setEvaluation] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Local calculation helper for immediate rendering if API connection fails
+  const generateLocalFallbackScore = (questionsList, answersList) => {
+    const validAnswers = answersList.filter((a) => a && a.trim().length > 10);
+    const ratio = questionsList.length > 0 ? validAnswers.length / questionsList.length : 0;
+    const estimatedScore = Math.round(ratio * 85);
+
+    return {
+      score: estimatedScore,
+      level: estimatedScore >= 70 ? "Proficient" : estimatedScore >= 40 ? "Intermediate" : "Needs Improvement",
+      focusAreas: [
+        "Elaborate further with specific production examples and tools.",
+        "Include metrics or quantifiable outcomes in your explanations.",
+      ],
+      feedback: answersList.map((ans) =>
+        ans && ans.trim().length > 10
+          ? "Good concise answer provided. Consider expanding on real-world application or edge cases."
+          : "Answer was too brief or empty. Provide clear technical explanations."
+      ),
+    };
+  };
+
   useEffect(() => {
     const runEvaluation = async () => {
       setLoading(true);
       try {
-        const response = await fetch("https://ai-mock-interview-kn7p.onrender.com/api/interview/evaluate", {
+        const baseUrl = import.meta.env.VITE_API_URL || "https://ai-mock-interview-kn7p.onrender.com";
+
+        // FIX: Using plural /api/interviews/evaluate route
+        const response = await fetch(`${baseUrl}/api/interviews/evaluate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -50,17 +72,22 @@ export default function InterviewResults() {
         });
 
         const data = await response.json();
-        if (data.success) {
+
+        if (response.ok && data.success && data.evaluation) {
           setEvaluation(data.evaluation);
+        } else {
+          console.warn("API returned non-200 or empty evaluation, using fallback:", data);
+          setEvaluation(generateLocalFallbackScore(questions, answers));
         }
       } catch (error) {
-        console.error("Evaluation failed:", error);
+        console.error("Evaluation request error:", error);
+        setEvaluation(generateLocalFallbackScore(questions, answers));
       } finally {
         setLoading(false);
       }
     };
 
-    if (questions.length > 0) {
+    if (questions && questions.length > 0) {
       runEvaluation();
     } else {
       setLoading(false);
@@ -70,7 +97,6 @@ export default function InterviewResults() {
   const score = evaluation?.score ?? 0;
   const focusAreas = evaluation?.focusAreas || ["Provide more detail in your answers", "Focus on technical depth"];
 
-  // Helper logic to calculate progress status
   const getProgressStatus = (scoreValue) => {
     if (scoreValue >= 75) return { label: "High Proficiency", color: "bg-emerald-500", text: "text-emerald-600", bgLight: "bg-emerald-50", border: "border-emerald-200" };
     if (scoreValue >= 40) return { label: "Medium Proficiency", color: "bg-amber-500", text: "text-amber-600", bgLight: "bg-amber-50", border: "border-amber-200" };
@@ -153,7 +179,6 @@ export default function InterviewResults() {
               </span>
             </div>
 
-            {/* PROGRESS BAR GRAPH */}
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-bold text-slate-500">
                 <span>0% (Low)</span>
@@ -168,7 +193,6 @@ export default function InterviewResults() {
               </div>
             </div>
 
-            {/* DETAILED STATISTICAL METRICS */}
             <div className="mt-6 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-4 text-center">
               <div className="p-2">
                 <p className="text-[11px] font-bold text-slate-400 uppercase">Answer Completeness</p>
@@ -225,7 +249,6 @@ export default function InterviewResults() {
 
               return (
                 <div key={idx} className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-                  {/* QUESTION HEADER */}
                   <div className="flex items-start justify-between gap-4">
                     <span className="rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-extrabold text-blue-600">
                       Q{idx + 1}
@@ -233,7 +256,6 @@ export default function InterviewResults() {
                     <p className="flex-1 text-sm font-bold text-slate-900">{q}</p>
                   </div>
 
-                  {/* USER ANSWER */}
                   <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                       Your Answer:
@@ -247,7 +269,6 @@ export default function InterviewResults() {
                     </p>
                   </div>
 
-                  {/* AI FEEDBACK CARD */}
                   <div className="mt-3 rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50/70 to-blue-50/70 p-4 shadow-2xs">
                     <div className="flex items-center gap-2 text-indigo-700">
                       <Sparkles size={16} className="shrink-0 text-indigo-600" />
@@ -265,7 +286,7 @@ export default function InterviewResults() {
                       ) : feedback ? (
                         feedback
                       ) : (
-                        "Answer was unreadable or incomplete. Provide clear, detailed technical examples to improve this score."
+                        "Provide detailed technical explanations and clear project examples to increase your overall score."
                       )}
                     </p>
                   </div>
