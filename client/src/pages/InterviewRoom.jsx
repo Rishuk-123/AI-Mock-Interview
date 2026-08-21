@@ -74,7 +74,7 @@ export default function InterviewRoom() {
     const fetchDynamicQuestions = async () => {
       setLoading(true);
 
-      const baseUrl = import.meta.env.VITE_API_URL || "https://ai-mock-interview-kn7p.onrender.com";
+      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
       const apiUrl = `${baseUrl}/api/interviews/generate-questions`;
 
       try {
@@ -192,7 +192,7 @@ export default function InterviewRoom() {
     });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -209,12 +209,39 @@ export default function InterviewRoom() {
     const targetId = id || Date.now().toString();
 
     if (currentIndex === questions.length - 1) {
+      // Save locally to Zustand
       const savedSession = saveInterview({
         id: targetId,
         setupConfig,
         questions,
         answers: updatedAnswers,
       });
+
+      // Persist to MongoDB backend for History persistence
+      try {
+        const token = localStorage.getItem("token");
+        const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+        await fetch(`${baseUrl}/api/interviews`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+          body: JSON.stringify({
+            role: setupConfig.role || "Frontend Developer",
+            difficulty: setupConfig.difficulty || "Medium",
+            interviewType: setupConfig.type || "Technical",
+            questions: questions.map((q, i) => ({
+              question: q,
+              answer: updatedAnswers[i] || "",
+            })),
+            status: "completed",
+          }),
+        });
+      } catch (err) {
+        console.warn("Database persistence failed, relying on local session:", err);
+      }
 
       navigate(`/interview/${savedSession.id}/results`, {
         state: { answers: updatedAnswers, setupConfig, questions },

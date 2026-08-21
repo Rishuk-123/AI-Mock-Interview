@@ -23,6 +23,7 @@ export default function InterviewResults() {
   const getInterviewById = useInterviewStore((state) => state.getInterviewById);
   const savedSession = typeof getInterviewById === "function" && id ? getInterviewById(id) : null;
 
+  // Read data passed from History navigation or Zustand state
   const answers = location.state?.answers || savedSession?.answers || [];
   const questions = location.state?.questions || savedSession?.questions || [];
   const setupConfig = location.state?.setupConfig || savedSession?.setupConfig || {
@@ -30,10 +31,12 @@ export default function InterviewResults() {
     difficulty: "Medium",
   };
 
-  const [evaluation, setEvaluation] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Preload state if evaluation was already passed from History
+  const preloadedEvaluation = location.state?.evaluation || savedSession?.evaluation || null;
+  const [evaluation, setEvaluation] = useState(preloadedEvaluation);
+  const [loading, setLoading] = useState(!preloadedEvaluation);
 
-  // Local calculation helper for immediate rendering if API connection fails
+  // Local calculation helper for immediate fallback rendering
   const generateLocalFallbackScore = (questionsList, answersList) => {
     const validAnswers = answersList.filter((a) => a && a.trim().length > 10);
     const ratio = questionsList.length > 0 ? validAnswers.length / questionsList.length : 0;
@@ -55,12 +58,18 @@ export default function InterviewResults() {
   };
 
   useEffect(() => {
+    // If we already have preloaded evaluation data from History, skip API call
+    if (preloadedEvaluation) {
+      setEvaluation(preloadedEvaluation);
+      setLoading(false);
+      return;
+    }
+
     const runEvaluation = async () => {
       setLoading(true);
       try {
-        const baseUrl = import.meta.env.VITE_API_URL || "https://ai-mock-interview-kn7p.onrender.com";
+        const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-        // FIX: Using plural /api/interviews/evaluate route
         const response = await fetch(`${baseUrl}/api/interviews/evaluate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -76,7 +85,7 @@ export default function InterviewResults() {
         if (response.ok && data.success && data.evaluation) {
           setEvaluation(data.evaluation);
         } else {
-          console.warn("API returned non-200 or empty evaluation, using fallback:", data);
+          console.warn("API returned non-200 evaluation, using fallback:", data);
           setEvaluation(generateLocalFallbackScore(questions, answers));
         }
       } catch (error) {
@@ -92,7 +101,7 @@ export default function InterviewResults() {
     } else {
       setLoading(false);
     }
-  }, [questions, answers, setupConfig.role]);
+  }, [preloadedEvaluation, questions, answers, setupConfig.role]);
 
   const score = evaluation?.score ?? 0;
   const focusAreas = evaluation?.focusAreas || ["Provide more detail in your answers", "Focus on technical depth"];
@@ -104,7 +113,7 @@ export default function InterviewResults() {
   };
 
   const status = getProgressStatus(score);
-  const validAnswersCount = answers.filter((a) => a && a.trim().length > 3).length;
+  const validAnswersCount = answers.filter((a) => a && typeof a === "string" && a.trim().length > 3).length;
 
   return (
     <MainLayout>
@@ -153,7 +162,7 @@ export default function InterviewResults() {
                   <MessageSquare size={16} className="text-emerald-600" /> Responses
                 </div>
                 <p className="mt-2 text-2xl font-extrabold text-emerald-600">
-                  {answers.filter((a) => a && a.trim()).length} / {questions.length}
+                  {answers.filter((a) => a && typeof a === "string" && a.trim()).length} / {questions.length}
                 </p>
               </div>
 
@@ -245,6 +254,8 @@ export default function InterviewResults() {
           <div className="mt-8 space-y-6">
             <h2 className="text-lg font-extrabold text-slate-900">Detailed Question Responses</h2>
             {questions.map((q, idx) => {
+              const questionText = typeof q === "string" ? q : q.question || q;
+              const answerText = answers[idx] || (typeof q === "object" ? q.answer : "");
               const feedback = evaluation?.feedback?.[idx];
 
               return (
@@ -253,7 +264,7 @@ export default function InterviewResults() {
                     <span className="rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-extrabold text-blue-600">
                       Q{idx + 1}
                     </span>
-                    <p className="flex-1 text-sm font-bold text-slate-900">{q}</p>
+                    <p className="flex-1 text-sm font-bold text-slate-900">{questionText}</p>
                   </div>
 
                   <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
@@ -261,8 +272,8 @@ export default function InterviewResults() {
                       Your Answer:
                     </span>
                     <p className="mt-1 text-xs font-medium text-slate-700">
-                      {answers[idx] && answers[idx].trim() ? (
-                        answers[idx]
+                      {answerText && typeof answerText === "string" && answerText.trim() ? (
+                        answerText
                       ) : (
                         <span className="italic text-slate-400">No answer provided.</span>
                       )}
@@ -299,10 +310,10 @@ export default function InterviewResults() {
           <div className="mt-8 flex items-center justify-between gap-4">
             <button
               type="button"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/history")}
               className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 cursor-pointer"
             >
-              <ArrowLeft size={16} /> Return to Dashboard
+              <ArrowLeft size={16} /> Return to History
             </button>
           </div>
 

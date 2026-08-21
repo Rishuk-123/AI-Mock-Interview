@@ -25,10 +25,12 @@ function App() {
 
   return (
     <Routes>
+      {/* PUBLIC ROUTES */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
+      {/* PROTECTED ROUTES */}
       <Route
         path="/dashboard"
         element={
@@ -56,7 +58,7 @@ function App() {
         }
       />
 
-      {/* RESULTS ROUTE DEFINED BEFORE DYNAMIC ID ROUTE */}
+      {/* SPECIFIC RESULTS ROUTE MUST STAY BEFORE DYNAMIC INTERVIEW ID */}
       <Route
         path="/interview/:id/results"
         element={
@@ -103,6 +105,7 @@ function App() {
         }
       />
 
+      {/* CATCH-ALL UNKNOWN ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
