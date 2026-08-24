@@ -22,5 +22,5 @@ const startServer = async () => {
     process.exit(1);
   }
 };
-// start the server
+// start the server fro server .js
 startServer();
