@@ -1,20 +1,27 @@
+import { createRequire } from "module";
 import { GoogleGenAI } from "@google/genai";
-import pdfParse from "pdf-parse";
+
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 
 export const analyzeResume = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: "Please upload a resume file (PDF)." });
+      return res.status(400).json({
+        success: false,
+        message: "Please upload a resume file (PDF).",
+      });
     }
 
-    // Extract text from the uploaded PDF
+    // Extract text from the uploaded PDF buffer
     const parsedPdf = await pdfParse(req.file.buffer);
     const resumeText = parsedPdf.text;
 
     if (!resumeText || resumeText.trim().length < 50) {
       return res.status(400).json({
         success: false,
-        message: "Unable to extract readable text from the document. Please ensure it is not a scanned image.",
+        message:
+          "Unable to extract readable text from the document. Please ensure it is not a scanned image.",
       });
     }
 
