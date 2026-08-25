@@ -22,7 +22,7 @@ import useAuthStore from "../store/authStore";
 // Configure worker source for Vite build compatibility
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-// ATS Evaluation Dictionaries
+// ATS Evaluation Dictionaries for Fallback
 const TECH_KEYWORDS = [
   "javascript", "react", "node", "express", "mongodb", "tailwind",
   "typescript", "git", "rest api", "html", "css", "c++", "python",
@@ -43,18 +43,12 @@ function Resume() {
 
   const [file, setFile] = useState(null);
   const [fileUrl, setFileUrl] = useState(user?.resumeUrl || null);
-  const [isDragging, setIsDragging] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const fileInputRef = useRef(null);
 
-  const [resumeData, setResumeData] = useState({
-    fileName: user?.resumeName || "Candidate_Resume.pdf",
-    uploadedAt: "Recently",
-    fileSize: "1.2 MB",
-    atsScore: 82,
-  });
+  const [resumeData, setResumeData] = useState(null);
 
   const [scoreBreakdown, setScoreBreakdown] = useState({
     keywordScore: 0,
@@ -77,7 +71,7 @@ function Resume() {
     }
   }, [file]);
 
-  // Extract raw text from PDF
+  // Client-side fallback extractor
   const extractPdfText = async (selectedFile) => {
     const arrayBuffer = await selectedFile.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -102,77 +96,115 @@ function Resume() {
     setFile(selectedFile);
     setIsAnalyzing(true);
 
+    const formData = new FormData();
+    formData.append("resume", selectedFile);
+
     try {
-      const extractedText = await extractPdfText(selectedFile);
-
-      // 1. Section Formatting Score (30% weight)
-      const foundSections = REQUIRED_SECTIONS.filter((sec) =>
-        extractedText.includes(sec)
-      );
-      const sectionScore = Math.round((foundSections.length / REQUIRED_SECTIONS.length) * 30);
-
-      // 2. Keyword Density Score (50% weight)
-      const foundKeywords = TECH_KEYWORDS.filter((kw) =>
-        extractedText.includes(kw)
-      );
-      const keywordScore = Math.round((foundKeywords.length / TECH_KEYWORDS.length) * 50);
-
-      // 3. Action Verb & Impact Score (20% weight)
-      const foundVerbs = ACTION_VERBS.filter((verb) =>
-        extractedText.includes(verb)
-      );
-      const actionVerbScore = Math.round((foundVerbs.length / ACTION_VERBS.length) * 20);
-
-      // Final Weighted Score
-      const totalScore = Math.min(100, sectionScore + keywordScore + actionVerbScore);
-
-      setScoreBreakdown({
-        keywordScore,
-        sectionScore,
-        actionVerbScore,
+      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const response = await fetch(`${baseUrl}/api/resume/analyze`, {
+        method: "POST",
+        body: formData,
       });
 
-      const formattedKeywords = foundKeywords.map(
-        (k) => k.charAt(0).toUpperCase() + k.slice(1)
-      );
+      const result = await response.json();
 
-      setResumeData({
-        fileName: selectedFile.name,
-        uploadedAt: "Just now",
-        fileSize: `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`,
-        atsScore: totalScore,
-      });
+      if (response.ok && result.success && result.data) {
+        const aiData = result.data;
 
-      const strengthsList = [];
-      const improvementsList = [];
+        setResumeData({
+          fileName: selectedFile.name,
+          uploadedAt: "Just now",
+          fileSize: `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`,
+          atsScore: aiData.atsScore || 80,
+        });
 
-      if (foundSections.length === REQUIRED_SECTIONS.length) {
-        strengthsList.push("Complete standard structure (Education, Experience, Skills, Projects)");
-      } else {
-        improvementsList.push(`Missing standard section headers: ${REQUIRED_SECTIONS.filter(s => !foundSections.includes(s)).join(", ")}`);
+        setScoreBreakdown({
+          keywordScore: aiData.scoreBreakdown?.keywordDensityScore || 0,
+          sectionScore: aiData.scoreBreakdown?.sectionStructureScore || 0,
+          actionVerbScore: aiData.scoreBreakdown?.actionVerbsScore || 0,
+        });
+
+        setAnalysisResult({
+          summary: aiData.verdict || "Resume analyzed successfully.",
+          strengths: aiData.keyStrengths || ["Clear structural formatting."],
+          improvements: aiData.recommendedImprovements || ["Add more metric-driven accomplishments."],
+          keywordsFound: aiData.extractedKeywords || ["JavaScript", "React"],
+        });
+
+        return;
       }
-
-      if (foundKeywords.length >= 5) {
-        strengthsList.push(`Detected ${foundKeywords.length} relevant tech stack keywords`);
-      } else {
-        improvementsList.push("Low technical keyword density. Add specific frameworks, languages, and tools.");
-      }
-
-      if (foundVerbs.length >= 3) {
-        strengthsList.push("Good usage of action verbs for project descriptions");
-      } else {
-        improvementsList.push("Enhance bullet points with strong action verbs (e.g., Optimized, Implemented)");
-      }
-
-      setAnalysisResult({
-        summary: `Analyzed document text: Scored ${totalScore}/100 across section structure, keyword density, and impact phrasing.`,
-        strengths: strengthsList,
-        improvements: improvementsList,
-        keywordsFound: formattedKeywords.length > 0 ? formattedKeywords : ["No Core Tech Keywords"],
-      });
+      throw new Error("Backend API unavailable, switching to local parsing.");
     } catch (err) {
-      console.error("Parsing Error:", err);
-      alert("Error reading PDF text. Please ensure the file is not password protected.");
+      console.warn("Using local fallback parser:", err);
+
+      try {
+        const extractedText = await extractPdfText(selectedFile);
+
+        const foundSections = REQUIRED_SECTIONS.filter((sec) =>
+          extractedText.includes(sec)
+        );
+        const sectionScore = Math.round((foundSections.length / REQUIRED_SECTIONS.length) * 30);
+
+        const foundKeywords = TECH_KEYWORDS.filter((kw) =>
+          extractedText.includes(kw)
+        );
+        const keywordScore = Math.round((foundKeywords.length / TECH_KEYWORDS.length) * 50);
+
+        const foundVerbs = ACTION_VERBS.filter((verb) =>
+          extractedText.includes(verb)
+        );
+        const actionVerbScore = Math.round((foundVerbs.length / ACTION_VERBS.length) * 20);
+
+        const totalScore = Math.min(100, sectionScore + keywordScore + actionVerbScore);
+
+        setScoreBreakdown({
+          keywordScore,
+          sectionScore,
+          actionVerbScore,
+        });
+
+        const formattedKeywords = foundKeywords.map(
+          (k) => k.charAt(0).toUpperCase() + k.slice(1)
+        );
+
+        setResumeData({
+          fileName: selectedFile.name,
+          uploadedAt: "Just now",
+          fileSize: `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`,
+          atsScore: totalScore,
+        });
+
+        const strengthsList = [];
+        const improvementsList = [];
+
+        if (foundSections.length === REQUIRED_SECTIONS.length) {
+          strengthsList.push("Complete standard structure (Education, Experience, Skills, Projects)");
+        } else {
+          improvementsList.push(`Missing standard section headers: ${REQUIRED_SECTIONS.filter(s => !foundSections.includes(s)).join(", ")}`);
+        }
+
+        if (foundKeywords.length >= 5) {
+          strengthsList.push(`Detected ${foundKeywords.length} relevant tech stack keywords`);
+        } else {
+          improvementsList.push("Low technical keyword density. Add specific frameworks, languages, and tools.");
+        }
+
+        if (foundVerbs.length >= 3) {
+          strengthsList.push("Good usage of action verbs for project descriptions");
+        } else {
+          improvementsList.push("Enhance bullet points with strong action verbs (e.g., Optimized, Implemented)");
+        }
+
+        setAnalysisResult({
+          summary: `Analyzed document text: Scored ${totalScore}/100 across structure and impact.`,
+          strengths: strengthsList,
+          improvements: improvementsList,
+          keywordsFound: formattedKeywords.length > 0 ? formattedKeywords : ["General Technical Skills"],
+        });
+      } catch (clientErr) {
+        console.error("Local parsing error:", clientErr);
+        alert("Error reading PDF text. Please ensure the file is not corrupted or password protected.");
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -185,6 +217,7 @@ function Resume() {
     setFile(null);
     setFileUrl(null);
     setResumeData(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -274,14 +307,14 @@ function Resume() {
                     <button
                       type="button"
                       onClick={() => setShowPreviewModal(true)}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 cursor-pointer"
                     >
                       <Eye size={15} /> Preview PDF
                     </button>
                     <button
                       type="button"
                       onClick={handleRemoveResume}
-                      className="flex items-center justify-center rounded-xl border border-red-200 bg-red-50 p-2.5 text-red-600 transition hover:bg-red-100"
+                      className="flex items-center justify-center rounded-xl border border-red-200 bg-red-50 p-2.5 text-red-600 transition hover:bg-red-100 cursor-pointer"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -425,7 +458,7 @@ function Resume() {
                 <button
                   type="button"
                   onClick={() => setShowPreviewModal(false)}
-                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 cursor-pointer"
                 >
                   <X size={20} />
                 </button>
