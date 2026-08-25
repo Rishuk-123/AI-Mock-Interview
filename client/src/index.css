@@ -19,3 +19,37 @@
     background-color: #020617;
   }
 }
+
+/* ========================================================= */
+/* PDF EXPORT & PRINT ISOLATION RULES                       */
+/* ========================================================= */
+@media print {
+  /* Hide the entire application (sidebar, navbar, backgrounds) */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Make only the interview report card visible */
+  #printable-interview-report,
+  #printable-interview-report * {
+    visibility: visible !important;
+  }
+
+  /* Reset layout to position the report cleanly at the top of the PDF */
+  #printable-interview-report {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Explicitly hide buttons and navigation inside the printable container */
+  .no-print {
+    display: none !important;
+  }
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   CheckCircle2,
@@ -11,6 +11,7 @@ import {
   Target,
   Loader2,
   TrendingUp,
+  Download,
 } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import useInterviewStore from "../store/useInterviewStore";
@@ -19,6 +20,7 @@ export default function InterviewResults() {
   const location = useLocation();
   const navigate = useNavigate();
   const { id } = useParams();
+  const savedToStorageRef = useRef(false);
 
   const getInterviewById = useInterviewStore((state) => state.getInterviewById);
   const savedSession = typeof getInterviewById === "function" && id ? getInterviewById(id) : null;
@@ -38,7 +40,7 @@ export default function InterviewResults() {
 
   // Local calculation helper for immediate fallback rendering
   const generateLocalFallbackScore = (questionsList, answersList) => {
-    const validAnswers = answersList.filter((a) => a && a.trim().length > 10);
+    const validAnswers = answersList.filter((a) => a && typeof a === "string" && a.trim().length > 10);
     const ratio = questionsList.length > 0 ? validAnswers.length / questionsList.length : 0;
     const estimatedScore = Math.round(ratio * 85);
 
@@ -50,7 +52,7 @@ export default function InterviewResults() {
         "Include metrics or quantifiable outcomes in your explanations.",
       ],
       feedback: answersList.map((ans) =>
-        ans && ans.trim().length > 10
+        ans && typeof ans === "string" && ans.trim().length > 10
           ? "Good concise answer provided. Consider expanding on real-world application or edge cases."
           : "Answer was too brief or empty. Provide clear technical explanations."
       ),
@@ -103,6 +105,48 @@ export default function InterviewResults() {
     }
   }, [preloadedEvaluation, questions, answers, setupConfig.role]);
 
+  // Persist session to localStorage so it appears in Interview History
+  useEffect(() => {
+    if (loading || !evaluation || savedToStorageRef.current) return;
+    savedToStorageRef.current = true;
+
+    const sessionEntry = {
+      id: id || `interview_${Date.now()}`,
+      role: setupConfig.role || "Software Developer",
+      difficulty: setupConfig.difficulty || "Medium",
+      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      duration: "15 mins",
+      score: evaluation.score ?? 80,
+      totalQuestions: questions.length || 4,
+      completedQuestions: answers.filter((a) => a && typeof a === "string" && a.trim()).length || 4,
+      verdict: evaluation.level || (evaluation.score >= 75 ? "Proficient" : "Needs Review"),
+      evaluation,
+      questions,
+      answers,
+      feedback: {
+        summary: `Completed ${setupConfig.role} mock interview assessment.`,
+        strengths: [
+          "Clear explanation of primary technical concepts.",
+          "Demonstrated structured logical reasoning across interview prompts.",
+        ],
+        improvements: evaluation.focusAreas || [
+          "Elaborate further with specific production metrics.",
+          "Include error-handling edge cases in code architecture.",
+        ],
+        qna: questions.map((q, idx) => ({
+          question: typeof q === "string" ? q : q.question || "Question",
+          answer: answers[idx] || "Candidate response submitted.",
+          score: Math.round(evaluation.score ?? 80),
+          feedback: evaluation.feedback?.[idx] || "Solid response provided.",
+        })),
+      },
+    };
+
+    const existing = JSON.parse(localStorage.getItem("recent_interviews") || "[]");
+    const filtered = existing.filter((item) => item.id !== sessionEntry.id);
+    localStorage.setItem("recent_interviews", JSON.stringify([sessionEntry, ...filtered]));
+  }, [loading, evaluation, id, setupConfig, questions, answers]);
+
   const score = evaluation?.score ?? 0;
   const focusAreas = evaluation?.focusAreas || ["Provide more detail in your answers", "Focus on technical depth"];
 
@@ -115,9 +159,13 @@ export default function InterviewResults() {
   const status = getProgressStatus(score);
   const validAnswersCount = answers.filter((a) => a && typeof a === "string" && a.trim().length > 3).length;
 
+  const handleDownloadPDF = () => {
+    window.print();
+  };
+
   return (
     <MainLayout>
-      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-12">
         <div className="mx-auto max-w-4xl px-5 py-8 sm:px-7 lg:px-8">
           
           {/* HEADER CARD */}
@@ -137,13 +185,23 @@ export default function InterviewResults() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => navigate("/interview")}
-                className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100"
-              >
-                <RotateCcw size={15} /> Retake
-              </button>
+              {/* ACTION BUTTONS */}
+              <div className="flex items-center gap-3 print:hidden">
+                <button
+                  type="button"
+                  onClick={handleDownloadPDF}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50 transition"
+                >
+                  <Download size={15} /> Download PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/start-interview")}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+                >
+                  <RotateCcw size={15} /> Retake
+                </button>
+              </div>
             </div>
 
             {/* STATS OVERVIEW */}
@@ -307,7 +365,7 @@ export default function InterviewResults() {
           </div>
 
           {/* BOTTOM ACTIONS */}
-          <div className="mt-8 flex items-center justify-between gap-4">
+          <div className="mt-8 flex items-center justify-between gap-4 print:hidden">
             <button
               type="button"
               onClick={() => navigate("/history")}
