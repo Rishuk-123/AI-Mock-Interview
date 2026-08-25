@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import {
   FileText,
   Upload,
@@ -13,35 +13,39 @@ import {
   Award,
   ExternalLink,
   BarChart2,
+  Check,
+  Layers,
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
-
 import MainLayout from "../layouts/MainLayout";
 import useAuthStore from "../store/authStore";
 
-// Configure worker source for Vite build compatibility
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-// ATS Evaluation Dictionaries for Fallback
+// ATS Evaluation Dictionaries
 const TECH_KEYWORDS = [
   "javascript", "react", "node", "express", "mongodb", "tailwind",
   "typescript", "git", "rest api", "html", "css", "c++", "python",
-  "sql", "postgresql", "mysql", "docker", "aws", "redux"
+  "sql", "postgresql", "mysql", "docker", "aws", "redux", "next.js", "graphql"
 ];
 
-const REQUIRED_SECTIONS = [
-  "education", "experience", "skills", "projects"
+const TRACKED_SECTIONS = [
+  { key: "experience", label: "Work Experience", synonyms: ["experience", "employment", "work history"] },
+  { key: "skills", label: "Skills & Tech Stack", synonyms: ["skills", "technical skills", "technologies", "competencies"] },
+  { key: "projects", label: "Projects", synonyms: ["projects", "personal projects", "academic projects"] },
+  { key: "education", label: "Education", synonyms: ["education", "academic background", "degrees"] },
+  { key: "achievements", label: "Achievements & Certifications", synonyms: ["achievements", "certifications", "awards", "honors"] },
 ];
 
 const ACTION_VERBS = [
   "developed", "built", "implemented", "designed", "optimized",
-  "created", "managed", "integrated", "lead", "architected"
+  "created", "managed", "integrated", "led", "architected", "enhanced", "resolved"
 ];
 
 function Resume() {
   const user = useAuthStore((state) => state.user);
 
-  const [file, setFile] = useState(null);
+  //const [file, setFile] = useState(null);
   const [fileUrl, setFileUrl] = useState(user?.resumeUrl || null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -49,6 +53,14 @@ function Resume() {
   const fileInputRef = useRef(null);
 
   const [resumeData, setResumeData] = useState(null);
+
+  const [sectionStatus, setSectionStatus] = useState({
+    experience: false,
+    skills: false,
+    projects: false,
+    education: false,
+    achievements: false,
+  });
 
   const [scoreBreakdown, setScoreBreakdown] = useState({
     keywordScore: 0,
@@ -63,15 +75,6 @@ function Resume() {
     keywordsFound: [],
   });
 
-  useEffect(() => {
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setFileUrl(url);
-      return () => URL.revokeObjectURL(url);
-    }
-  }, [file]);
-
-  // Client-side fallback extractor
   const extractPdfText = async (selectedFile) => {
     const arrayBuffer = await selectedFile.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -93,118 +96,97 @@ function Resume() {
       return;
     }
 
-    setFile(selectedFile);
+    // Clean up old blob URL if replacing
+    if (fileUrl && fileUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(fileUrl);
+    }
+
+    const newUrl = URL.createObjectURL(selectedFile);
+    // setFile(selectedFile);
+    setFileUrl(newUrl);
     setIsAnalyzing(true);
 
-    const formData = new FormData();
-    formData.append("resume", selectedFile);
-
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-      const response = await fetch(`${baseUrl}/api/resume/analyze`, {
-        method: "POST",
-        body: formData,
+      const extractedText = await extractPdfText(selectedFile);
+
+      // 1. Detect Standard Sections & Calculate Section Score (35% weight)
+      const foundSectionsMap = {};
+      let detectedCount = 0;
+
+      TRACKED_SECTIONS.forEach((sec) => {
+        const isPresent = sec.synonyms.some((synonym) => extractedText.includes(synonym));
+        foundSectionsMap[sec.key] = isPresent;
+        if (isPresent) detectedCount += 1;
       });
 
-      const result = await response.json();
+      setSectionStatus(foundSectionsMap);
+      const sectionScore = Math.round((detectedCount / TRACKED_SECTIONS.length) * 35);
 
-      if (response.ok && result.success && result.data) {
-        const aiData = result.data;
+      // 2. Technical Keyword Density Score (45% weight)
+      const foundKeywords = TECH_KEYWORDS.filter((kw) => extractedText.includes(kw));
+      const keywordScore = Math.min(45, Math.round((foundKeywords.length / 8) * 45));
 
-        setResumeData({
-          fileName: selectedFile.name,
-          uploadedAt: "Just now",
-          fileSize: `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`,
-          atsScore: aiData.atsScore || 80,
-        });
+      // 3. Action Verb & Impact Score (20% weight)
+      const foundVerbs = ACTION_VERBS.filter((verb) => extractedText.includes(verb));
+      const actionVerbScore = Math.min(20, Math.round((foundVerbs.length / 5) * 20));
 
-        setScoreBreakdown({
-          keywordScore: aiData.scoreBreakdown?.keywordDensityScore || 0,
-          sectionScore: aiData.scoreBreakdown?.sectionStructureScore || 0,
-          actionVerbScore: aiData.scoreBreakdown?.actionVerbsScore || 0,
-        });
+      // Total Final ATS Score (0 - 100%)
+      const totalScore = Math.min(100, sectionScore + keywordScore + actionVerbScore);
 
-        setAnalysisResult({
-          summary: aiData.verdict || "Resume analyzed successfully.",
-          strengths: aiData.keyStrengths || ["Clear structural formatting."],
-          improvements: aiData.recommendedImprovements || ["Add more metric-driven accomplishments."],
-          keywordsFound: aiData.extractedKeywords || ["JavaScript", "React"],
-        });
+      setScoreBreakdown({
+        keywordScore,
+        sectionScore,
+        actionVerbScore,
+      });
 
-        return;
+      const formattedKeywords = foundKeywords.map(
+        (k) => k.charAt(0).toUpperCase() + k.slice(1)
+      );
+
+      setResumeData({
+        fileName: selectedFile.name,
+        uploadedAt: "Just now",
+        fileSize: `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`,
+        atsScore: totalScore,
+      });
+
+      // Construct Strengths & Improvements
+      const strengthsList = [];
+      const improvementsList = [];
+
+      if (detectedCount >= 4) {
+        strengthsList.push(`Found ${detectedCount} of 5 essential resume sections.`);
       }
-      throw new Error("Backend API unavailable, switching to local parsing.");
+      if (foundSectionsMap.achievements) {
+        strengthsList.push("Includes Achievements/Certifications section which adds credibility.");
+      }
+      if (foundKeywords.length >= 6) {
+        strengthsList.push(`Strong tech stack representation with ${foundKeywords.length} core keywords.`);
+      }
+      if (foundVerbs.length >= 4) {
+        strengthsList.push("High density of impact-oriented action verbs (e.g., Developed, Optimized).");
+      }
+
+      const missingSections = TRACKED_SECTIONS.filter((s) => !foundSectionsMap[s.key]);
+      if (missingSections.length > 0) {
+        improvementsList.push(`Missing key sections: ${missingSections.map((m) => m.label).join(", ")}.`);
+      }
+      if (foundKeywords.length < 6) {
+        improvementsList.push("Low keyword frequency. Add more specific libraries, databases, and tools.");
+      }
+      if (foundVerbs.length < 4) {
+        improvementsList.push("Replace passive bullet phrasing with direct action verbs (e.g., Built, Integrated).");
+      }
+
+      setAnalysisResult({
+        summary: `Resume parsed successfully with an overall ATS compliance score of ${totalScore}%.`,
+        strengths: strengthsList.length > 0 ? strengthsList : ["Standard readable PDF formatting."],
+        improvements: improvementsList.length > 0 ? improvementsList : ["Maintain up-to-date metrics and project URLs."],
+        keywordsFound: formattedKeywords.length > 0 ? formattedKeywords : ["General Technical Skills"],
+      });
     } catch (err) {
-      console.warn("Using local fallback parser:", err);
-
-      try {
-        const extractedText = await extractPdfText(selectedFile);
-
-        const foundSections = REQUIRED_SECTIONS.filter((sec) =>
-          extractedText.includes(sec)
-        );
-        const sectionScore = Math.round((foundSections.length / REQUIRED_SECTIONS.length) * 30);
-
-        const foundKeywords = TECH_KEYWORDS.filter((kw) =>
-          extractedText.includes(kw)
-        );
-        const keywordScore = Math.round((foundKeywords.length / TECH_KEYWORDS.length) * 50);
-
-        const foundVerbs = ACTION_VERBS.filter((verb) =>
-          extractedText.includes(verb)
-        );
-        const actionVerbScore = Math.round((foundVerbs.length / ACTION_VERBS.length) * 20);
-
-        const totalScore = Math.min(100, sectionScore + keywordScore + actionVerbScore);
-
-        setScoreBreakdown({
-          keywordScore,
-          sectionScore,
-          actionVerbScore,
-        });
-
-        const formattedKeywords = foundKeywords.map(
-          (k) => k.charAt(0).toUpperCase() + k.slice(1)
-        );
-
-        setResumeData({
-          fileName: selectedFile.name,
-          uploadedAt: "Just now",
-          fileSize: `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`,
-          atsScore: totalScore,
-        });
-
-        const strengthsList = [];
-        const improvementsList = [];
-
-        if (foundSections.length === REQUIRED_SECTIONS.length) {
-          strengthsList.push("Complete standard structure (Education, Experience, Skills, Projects)");
-        } else {
-          improvementsList.push(`Missing standard section headers: ${REQUIRED_SECTIONS.filter(s => !foundSections.includes(s)).join(", ")}`);
-        }
-
-        if (foundKeywords.length >= 5) {
-          strengthsList.push(`Detected ${foundKeywords.length} relevant tech stack keywords`);
-        } else {
-          improvementsList.push("Low technical keyword density. Add specific frameworks, languages, and tools.");
-        }
-
-        if (foundVerbs.length >= 3) {
-          strengthsList.push("Good usage of action verbs for project descriptions");
-        } else {
-          improvementsList.push("Enhance bullet points with strong action verbs (e.g., Optimized, Implemented)");
-        }
-
-        setAnalysisResult({
-          summary: `Analyzed document text: Scored ${totalScore}/100 across structure and impact.`,
-          strengths: strengthsList,
-          improvements: improvementsList,
-          keywordsFound: formattedKeywords.length > 0 ? formattedKeywords : ["General Technical Skills"],
-        });
-      } catch (clientErr) {
-        console.error("Local parsing error:", clientErr);
-        alert("Error reading PDF text. Please ensure the file is not corrupted or password protected.");
-      }
+      console.error("PDF Parsing Error:", err);
+      alert("Could not process PDF. Please make sure it contains selectable text and is not an image-only scan.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -214,7 +196,7 @@ function Resume() {
     if (fileUrl && fileUrl.startsWith("blob:")) {
       URL.revokeObjectURL(fileUrl);
     }
-    setFile(null);
+    // setFile(null);
     setFileUrl(null);
     setResumeData(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -231,7 +213,7 @@ function Resume() {
                 Resume Analyzer
               </h1>
               <p className="mt-1 text-sm text-slate-500">
-                Multi-factor ATS compliance scoring, formatting checks, and keyword extraction.
+                Section completeness audits, ATS compliance metrics, and keyword analysis.
               </p>
             </div>
 
@@ -241,8 +223,7 @@ function Resume() {
                 onClick={() => fileInputRef.current?.click()}
                 className="flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500"
               >
-                <RefreshCw size={16} />
-                Re-upload Resume
+                <RefreshCw size={16} /> Re-upload Resume
               </button>
             )}
           </div>
@@ -255,7 +236,7 @@ function Resume() {
             className="hidden"
           />
 
-          {/* UPLOAD DROPZONE */}
+          {/* EMPTY UPLOAD ZONE */}
           {!resumeData && !isAnalyzing && (
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -268,7 +249,7 @@ function Resume() {
                 Upload your PDF Resume
               </h3>
               <p className="mt-1 text-sm text-slate-500">
-                Click to browse or drop your PDF here for instant ATS scoring
+                Click or drag & drop your PDF here for instant multi-factor section & ATS evaluation
               </p>
             </div>
           )}
@@ -278,16 +259,17 @@ function Resume() {
             <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-16 shadow-sm">
               <Sparkles size={32} className="animate-spin text-blue-600" />
               <h3 className="mt-4 text-lg font-bold text-slate-900">
-                Running ATS Evaluation...
+                Analyzing Sections & Keywords...
               </h3>
             </div>
           )}
 
-          {/* ANALYSIS RESULTS */}
+          {/* RESULTS DASHBOARD */}
           {resumeData && !isAnalyzing && (
             <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+              {/* LEFT COLUMN */}
               <div className="flex flex-col gap-6 lg:col-span-5">
-                {/* FILE DETAILS */}
+                {/* FILE SUMMARY */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex items-center gap-4">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600">
@@ -325,7 +307,7 @@ function Resume() {
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
-                      <Target size={15} className="text-blue-600" /> ATS Compatibility Score
+                      <Target size={15} className="text-blue-600" /> Overall ATS Score
                     </span>
                     <span
                       className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
@@ -350,36 +332,64 @@ function Resume() {
                     </div>
                     <div>
                       <p className="text-base font-bold text-slate-900">
-                        {resumeData.atsScore >= 70
-                          ? "Great Match!"
-                          : "Sub-optimal Match"}
+                        {resumeData.atsScore >= 70 ? "Great ATS Match!" : "Needs Improvement"}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
-                        Based on technical keywords, section completeness, and action verbs.
+                        Calculated from section presence, technical keywords, and strong impact verbs.
                       </p>
                     </div>
                   </div>
 
-                  {/* SCORE BREAKDOWN METRICS */}
+                  {/* SCORE BREAKDOWN */}
                   <div className="mt-6 space-y-3 border-t border-slate-100 pt-4 text-xs font-semibold text-slate-600">
                     <div className="flex justify-between">
-                      <span>Tech Keyword Density (50% max):</span>
-                      <span className="text-slate-900 font-bold">{scoreBreakdown.keywordScore} pts</span>
+                      <span>Tech Keywords (45% max):</span>
+                      <span className="font-bold text-slate-900">{scoreBreakdown.keywordScore} pts</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Section Structure (30% max):</span>
-                      <span className="text-slate-900 font-bold">{scoreBreakdown.sectionScore} pts</span>
+                      <span>Section Structure (35% max):</span>
+                      <span className="font-bold text-slate-900">{scoreBreakdown.sectionScore} pts</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Action Verbs & Impact (20% max):</span>
-                      <span className="text-slate-900 font-bold">{scoreBreakdown.actionVerbScore} pts</span>
+                      <span className="font-bold text-slate-900">{scoreBreakdown.actionVerbScore} pts</span>
                     </div>
+                  </div>
+                </div>
+
+                {/* SECTION AUDIT CHECKLIST */}
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3 font-bold text-slate-900 text-sm">
+                    <Layers size={16} className="text-blue-600" /> Section Completeness Check
+                  </div>
+                  <div className="mt-4 space-y-2.5">
+                    {TRACKED_SECTIONS.map((sec) => {
+                      const detected = sectionStatus[sec.key];
+                      return (
+                        <div
+                          key={sec.key}
+                          className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-2.5 text-xs font-semibold"
+                        >
+                          <span className="text-slate-700">{sec.label}</span>
+                          {detected ? (
+                            <span className="flex items-center gap-1 text-emerald-600">
+                              <Check size={14} className="stroke-[3]" /> Found
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-red-500">
+                              <X size={14} className="stroke-[3]" /> Missing
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
 
-              {/* FEEDBACK & KEYWORDS */}
+              {/* RIGHT COLUMN */}
               <div className="flex flex-col gap-6 lg:col-span-7">
+                {/* AI ANALYSIS CARD */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
                   <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
                     <BarChart2 size={20} className="text-blue-600" />
@@ -395,7 +405,7 @@ function Resume() {
                       </h4>
                       <ul className="mt-3 space-y-2">
                         {analysisResult.strengths.map((item, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-xs text-slate-700">
+                          <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
                             <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
                             {item}
                           </li>
@@ -409,7 +419,7 @@ function Resume() {
                       </h4>
                       <ul className="mt-3 space-y-2">
                         {analysisResult.improvements.map((item, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-xs text-slate-700">
+                          <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
                             <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
                             {item}
                           </li>
@@ -419,6 +429,7 @@ function Resume() {
                   </div>
                 </div>
 
+                {/* EXTRACTED TECHNICAL KEYWORDS */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                   <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-900">
                     <Award size={16} className="text-blue-600" /> Extracted Technical Keywords
@@ -440,7 +451,7 @@ function Resume() {
         </div>
       </div>
 
-      {/* PREVIEW MODAL */}
+      {/* PDF PREVIEW MODAL */}
       {showPreviewModal && fileUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
           <div className="flex h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
