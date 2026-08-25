@@ -3,11 +3,11 @@ import "dotenv/config";
 import app from "./app.js";
 import connectDB from "./config/db.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
-
+import resumeRoutes from "./routes/resumeRoutes.js";
 // Mount interview routes
 app.use("/api/interview", interviewRoutes);
 app.use("/api/interviews", interviewRoutes); // Kept for backwards compatibility
-
+app.use("/api/resume", resumeRoutes);
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
