@@ -9,8 +9,10 @@ import {
   CheckCircle2,
   ArrowRight,
   FileText,
+  Loader2,
 } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
+import useAuthStore from "../store/authStore";
 
 export default function InterviewSetup() {
   const navigate = useNavigate();
@@ -19,19 +21,90 @@ export default function InterviewSetup() {
   const [type, setType] = useState("Technical");
   const [difficulty, setDifficulty] = useState("Medium");
   const [useResume, setUseResume] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const token = useAuthStore((state) => state.token) || localStorage.getItem("token");
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const targetRole = role.trim() || "Software Developer";
     const interviewId = Date.now().toString();
-    navigate(`/interview/${interviewId}`);
+
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+      const response = await fetch(`${baseUrl}/api/interviews/generate-questions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          role: targetRole,
+          difficulty,
+          type,
+          company,
+          useResume,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && Array.isArray(data.questions) && data.questions.length > 0) {
+        navigate(`/interview/${interviewId}`, {
+          state: {
+            questions: data.questions,
+            setupConfig: { role: targetRole, company, type, difficulty },
+          },
+        });
+      } else {
+        // Safe fallback if API returns non-200 or unexpected structure
+        const fallbackQuestions = [
+          `Can you explain your background and core technical skills as a ${targetRole}?`,
+          `Describe a challenging technical obstacle you recently solved in your ${targetRole} projects.`,
+          `How do you handle debugging, optimization, and edge-case errors in production?`,
+          `What processes do you follow to ensure code quality, testability, and architectural maintainability?`,
+        ];
+
+        navigate(`/interview/${interviewId}`, {
+          state: {
+            questions: fallbackQuestions,
+            setupConfig: { role: targetRole, company, type, difficulty },
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Question generation fallback activated:", err);
+      const fallbackQuestions = [
+        `Can you explain your background and core technical skills as a ${targetRole}?`,
+        `Describe a challenging technical obstacle you recently solved in your ${targetRole} projects.`,
+        `How do you handle debugging, optimization, and edge-case errors in production?`,
+        `What processes do you follow to ensure code quality, testability, and architectural maintainability?`,
+      ];
+
+      navigate(`/interview/${interviewId}`, {
+        state: {
+          questions: fallbackQuestions,
+          setupConfig: { role: targetRole, company, type, difficulty },
+        },
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
         <div className="mx-auto max-w-4xl px-5 py-8 sm:px-7 lg:px-8">
+          
           {/* MAIN CARD CONTAINER */}
           <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
+            
             {/* HEADER SECTION */}
             <div className="border-b border-slate-100 p-6 sm:p-8">
               <div className="flex items-center gap-4">
@@ -49,8 +122,16 @@ export default function InterviewSetup() {
               </div>
             </div>
 
+            {/* ERROR NOTIFICATION */}
+            {error && (
+              <div className="mx-6 mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-600 sm:mx-8">
+                {error}
+              </div>
+            )}
+
             {/* FORM BODY */}
             <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8">
+              
               {/* ROW 1: JOB ROLE & COMPANY */}
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* JOB ROLE */}
@@ -207,9 +288,18 @@ export default function InterviewSetup() {
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500 active:scale-95"
+                  disabled={loading}
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500 disabled:opacity-60 active:scale-95"
                 >
-                  Start Practice Session <ArrowRight size={16} />
+                  {loading ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" /> Generating {difficulty} Questions...
+                    </>
+                  ) : (
+                    <>
+                      Start Practice Session <ArrowRight size={16} />
+                    </>
+                  )}
                 </button>
               </div>
             </form>

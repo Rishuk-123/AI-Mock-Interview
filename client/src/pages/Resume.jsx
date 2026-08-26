@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import {
   FileText,
   Upload,
@@ -22,7 +22,6 @@ import useAuthStore from "../store/authStore";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-// ATS Evaluation Dictionaries
 const TECH_KEYWORDS = [
   "javascript", "react", "node", "express", "mongodb", "tailwind",
   "typescript", "git", "rest api", "html", "css", "c++", "python",
@@ -44,36 +43,60 @@ const ACTION_VERBS = [
 
 function Resume() {
   const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token) || localStorage.getItem("token");
 
-  //const [file, setFile] = useState(null);
-  const [fileUrl, setFileUrl] = useState(user?.resumeUrl || null);
+  const userEmail = useMemo(() => {
+    return (
+      user?.email ||
+      JSON.parse(localStorage.getItem("auth-storage") || "{}")?.state?.user
+        ?.email ||
+      "candidate@example.com"
+    );
+  }, [user?.email]);
+
+  // Lazy initialize state from localStorage to prevent synchronous effect state updates
+  const savedCache = useMemo(() => {
+    try {
+      const saved = localStorage.getItem(`parsed_resume_${userEmail}`);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  }, [userEmail]);
+
+  const [fileUrl, setFileUrl] = useState(user?.resumeUrl || savedCache?.fileUrl || null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [resumeData, setResumeData] = useState(savedCache?.resumeData || null);
 
   const fileInputRef = useRef(null);
 
-  const [resumeData, setResumeData] = useState(null);
+  const [sectionStatus, setSectionStatus] = useState(
+    savedCache?.sectionStatus || {
+      experience: false,
+      skills: false,
+      projects: false,
+      education: false,
+      achievements: false,
+    }
+  );
 
-  const [sectionStatus, setSectionStatus] = useState({
-    experience: false,
-    skills: false,
-    projects: false,
-    education: false,
-    achievements: false,
-  });
+  const [scoreBreakdown, setScoreBreakdown] = useState(
+    savedCache?.scoreBreakdown || {
+      keywordScore: 0,
+      sectionScore: 0,
+      actionVerbScore: 0,
+    }
+  );
 
-  const [scoreBreakdown, setScoreBreakdown] = useState({
-    keywordScore: 0,
-    sectionScore: 0,
-    actionVerbScore: 0,
-  });
-
-  const [analysisResult, setAnalysisResult] = useState({
-    summary: "",
-    strengths: [],
-    improvements: [],
-    keywordsFound: [],
-  });
+  const [analysisResult, setAnalysisResult] = useState(
+    savedCache?.analysisResult || {
+      summary: "",
+      strengths: [],
+      improvements: [],
+      keywordsFound: [],
+    }
+  );
 
   const extractPdfText = async (selectedFile) => {
     const arrayBuffer = await selectedFile.arrayBuffer();
@@ -96,20 +119,17 @@ function Resume() {
       return;
     }
 
-    // Clean up old blob URL if replacing
     if (fileUrl && fileUrl.startsWith("blob:")) {
       URL.revokeObjectURL(fileUrl);
     }
 
     const newUrl = URL.createObjectURL(selectedFile);
-    // setFile(selectedFile);
     setFileUrl(newUrl);
     setIsAnalyzing(true);
 
     try {
       const extractedText = await extractPdfText(selectedFile);
 
-      // 1. Detect Standard Sections & Calculate Section Score (35% weight)
       const foundSectionsMap = {};
       let detectedCount = 0;
 
@@ -122,35 +142,33 @@ function Resume() {
       setSectionStatus(foundSectionsMap);
       const sectionScore = Math.round((detectedCount / TRACKED_SECTIONS.length) * 35);
 
-      // 2. Technical Keyword Density Score (45% weight)
       const foundKeywords = TECH_KEYWORDS.filter((kw) => extractedText.includes(kw));
       const keywordScore = Math.min(45, Math.round((foundKeywords.length / 8) * 45));
 
-      // 3. Action Verb & Impact Score (20% weight)
       const foundVerbs = ACTION_VERBS.filter((verb) => extractedText.includes(verb));
       const actionVerbScore = Math.min(20, Math.round((foundVerbs.length / 5) * 20));
 
-      // Total Final ATS Score (0 - 100%)
       const totalScore = Math.min(100, sectionScore + keywordScore + actionVerbScore);
 
-      setScoreBreakdown({
+      const calculatedBreakdown = {
         keywordScore,
         sectionScore,
         actionVerbScore,
-      });
+      };
+      setScoreBreakdown(calculatedBreakdown);
 
       const formattedKeywords = foundKeywords.map(
         (k) => k.charAt(0).toUpperCase() + k.slice(1)
       );
 
-      setResumeData({
+      const computedResumeData = {
         fileName: selectedFile.name,
         uploadedAt: "Just now",
         fileSize: `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`,
         atsScore: totalScore,
-      });
+      };
+      setResumeData(computedResumeData);
 
-      // Construct Strengths & Improvements
       const strengthsList = [];
       const improvementsList = [];
 
@@ -178,15 +196,47 @@ function Resume() {
         improvementsList.push("Replace passive bullet phrasing with direct action verbs (e.g., Built, Integrated).");
       }
 
-      setAnalysisResult({
+      const computedAnalysis = {
         summary: `Resume parsed successfully with an overall ATS compliance score of ${totalScore}%.`,
         strengths: strengthsList.length > 0 ? strengthsList : ["Standard readable PDF formatting."],
         improvements: improvementsList.length > 0 ? improvementsList : ["Maintain up-to-date metrics and project URLs."],
         keywordsFound: formattedKeywords.length > 0 ? formattedKeywords : ["General Technical Skills"],
-      });
+      };
+      setAnalysisResult(computedAnalysis);
+
+      localStorage.setItem(
+        `parsed_resume_${userEmail}`,
+        JSON.stringify({
+          resumeData: computedResumeData,
+          sectionStatus: foundSectionsMap,
+          scoreBreakdown: calculatedBreakdown,
+          analysisResult: computedAnalysis,
+          extractedText: extractedText.slice(0, 3000),
+          keywords: formattedKeywords,
+        })
+      );
+
+      if (token && formattedKeywords.length > 0) {
+        try {
+          const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+          await fetch(`${baseUrl}/api/users/profile`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              skills: formattedKeywords,
+              resumeText: extractedText.slice(0, 3000),
+            }),
+          });
+        } catch (syncErr) {
+          console.warn("Could not sync parsed skills to server profile:", syncErr);
+        }
+      }
     } catch (err) {
       console.error("PDF Parsing Error:", err);
-      alert("Could not process PDF. Please make sure it contains selectable text and is not an image-only scan.");
+      alert("Could not process PDF. Please make sure it contains selectable text and is not an image scan.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -196,17 +246,17 @@ function Resume() {
     if (fileUrl && fileUrl.startsWith("blob:")) {
       URL.revokeObjectURL(fileUrl);
     }
-    // setFile(null);
     setFileUrl(null);
     setResumeData(null);
+    localStorage.removeItem(`parsed_resume_${userEmail}`);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
         <div className="mx-auto max-w-7xl px-5 py-8 sm:px-7 lg:px-8">
-          {/* HEADER */}
+          
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
@@ -231,12 +281,11 @@ function Resume() {
           <input
             type="file"
             ref={fileInputRef}
-            onChange={(e) => e.target.files[0] && handleFileSelected(e.target.files[0])}
+            onChange={(e) => e.target.files?.[0] && handleFileSelected(e.target.files[0])}
             accept=".pdf"
             className="hidden"
           />
 
-          {/* EMPTY UPLOAD ZONE */}
           {!resumeData && !isAnalyzing && (
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -254,7 +303,6 @@ function Resume() {
             </div>
           )}
 
-          {/* LOADING STATE */}
           {isAnalyzing && (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-16 shadow-sm">
               <Sparkles size={32} className="animate-spin text-blue-600" />
@@ -264,12 +312,10 @@ function Resume() {
             </div>
           )}
 
-          {/* RESULTS DASHBOARD */}
           {resumeData && !isAnalyzing && (
             <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
-              {/* LEFT COLUMN */}
+              
               <div className="flex flex-col gap-6 lg:col-span-5">
-                {/* FILE SUMMARY */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex items-center gap-4">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600">
@@ -303,7 +349,6 @@ function Resume() {
                   </div>
                 </div>
 
-                {/* OVERALL ATS SCORE */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -340,7 +385,6 @@ function Resume() {
                     </div>
                   </div>
 
-                  {/* SCORE BREAKDOWN */}
                   <div className="mt-6 space-y-3 border-t border-slate-100 pt-4 text-xs font-semibold text-slate-600">
                     <div className="flex justify-between">
                       <span>Tech Keywords (45% max):</span>
@@ -357,7 +401,6 @@ function Resume() {
                   </div>
                 </div>
 
-                {/* SECTION AUDIT CHECKLIST */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex items-center gap-2 border-b border-slate-100 pb-3 font-bold text-slate-900 text-sm">
                     <Layers size={16} className="text-blue-600" /> Section Completeness Check
@@ -387,9 +430,7 @@ function Resume() {
                 </div>
               </div>
 
-              {/* RIGHT COLUMN */}
               <div className="flex flex-col gap-6 lg:col-span-7">
-                {/* AI ANALYSIS CARD */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
                   <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
                     <BarChart2 size={20} className="text-blue-600" />
@@ -429,7 +470,6 @@ function Resume() {
                   </div>
                 </div>
 
-                {/* EXTRACTED TECHNICAL KEYWORDS */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                   <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-900">
                     <Award size={16} className="text-blue-600" /> Extracted Technical Keywords
@@ -446,12 +486,12 @@ function Resume() {
                   </div>
                 </div>
               </div>
+
             </div>
           )}
         </div>
       </div>
 
-      {/* PDF PREVIEW MODAL */}
       {showPreviewModal && fileUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
           <div className="flex h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">

@@ -2,7 +2,7 @@ import { create } from "zustand";
 import api from "../services/api";
 import useInterviewStore from "./useInterviewStore";
 
-const useAuthStore = create((set, get) => ({
+const useAuthStore = create((set) => ({
   user: null,
   token: localStorage.getItem("token") || null,
   loading: false,
@@ -10,40 +10,54 @@ const useAuthStore = create((set, get) => ({
 
   register: async (data) => {
     set({ loading: true });
-
     try {
       const res = await api.post("/auth/register", data);
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+      }
 
-      set({ loading: false });
+      // Default to 100 credits if not provided
+      const userPayload = res.data.user
+        ? { ...res.data.user, credits: res.data.user.credits ?? 100 }
+        : null;
+
+      set({
+        token: res.data.token || null,
+        user: userPayload,
+        loading: false,
+        initialized: true,
+      });
 
       return res.data;
     } catch (err) {
       set({ loading: false });
-
-      throw err.response?.data || {
-        message: "Registration failed",
-      };
+      throw err.response?.data || { message: "Registration failed" };
     }
   },
 
   login: async (data) => {
     set({ loading: true });
-
     try {
       const res = await api.post("/auth/login", data);
-
       localStorage.setItem("token", res.data.token);
 
-      // Clear any previous user's cached store state
       if (typeof useInterviewStore.getState().reset === "function") {
         useInterviewStore.getState().reset();
       } else {
-        useInterviewStore.setState({ interviews: [], currentInterview: null });
+        useInterviewStore.setState({
+          interviews: [],
+          currentInterview: null,
+        });
       }
+
+      // Default to 100 credits if not provided
+      const userPayload = res.data.user
+        ? { ...res.data.user, credits: res.data.user.credits ?? 100 }
+        : null;
 
       set({
         token: res.data.token,
-        user: res.data.user,
+        user: userPayload,
         loading: false,
         initialized: true,
       });
@@ -51,76 +65,61 @@ const useAuthStore = create((set, get) => ({
       return res.data;
     } catch (err) {
       set({ loading: false });
-
-      throw err.response?.data || {
-        message: "Login failed",
-      };
+      throw err.response?.data || { message: "Login failed" };
     }
   },
 
   fetchProfile: async () => {
     const token = localStorage.getItem("token");
-
     if (!token) {
-      set({
-        user: null,
-        token: null,
-        initialized: true,
-      });
-
+      set({ user: null, token: null, initialized: true });
       return;
     }
 
     try {
       const res = await api.get("/users/profile");
+      const userPayload = res.data.user
+        ? { ...res.data.user, credits: res.data.user.credits ?? 100 }
+        : null;
 
       set({
-        user: res.data.user,
+        user: userPayload,
         token,
         initialized: true,
       });
     } catch {
       localStorage.removeItem("token");
-
-      set({
-        user: null,
-        token: null,
-        initialized: true,
-      });
+      set({ user: null, token: null, initialized: true });
     }
   },
 
-  updateProfile: async (data) => {
-    set({ loading: true });
+  // Deduct 30 credits per interview
+  deductCredit: (amount = 30) => {
+    set((state) => {
+      if (!state.user) return state;
 
-    try {
-      const res = await api.put("/users/profile", data);
+      const currentCredits = typeof state.user.credits === "number" ? state.user.credits : 100;
+      const updatedCredits = Math.max(0, currentCredits - amount);
 
-      set((state) => ({
-        user: res.data.user || { ...state.user, ...data },
-        loading: false,
-      }));
-
-      return res.data;
-    } catch (err) {
-      set({ loading: false });
-
-      throw err.response?.data || {
-        message: "Failed to update profile",
+      return {
+        user: {
+          ...state.user,
+          credits: updatedCredits,
+        },
       };
-    }
+    });
   },
 
   logout: () => {
     localStorage.removeItem("token");
-
-    // Clear active interview state from store memory
     if (typeof useInterviewStore.getState().reset === "function") {
       useInterviewStore.getState().reset();
     } else {
-      useInterviewStore.setState({ interviews: [], currentInterview: null });
+      useInterviewStore.setState({
+        interviews: [],
+        currentInterview: null,
+      });
     }
-
     set({
       token: null,
       user: null,

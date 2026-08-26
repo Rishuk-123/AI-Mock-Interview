@@ -22,12 +22,16 @@ export default function Register() {
       }
       navigate("/dashboard");
     } catch (err) {
-      setError("Registration failed. Please check your details.");
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Registration failed. Please check your details."
+      );
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 text-slate-900">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 text-slate-900 font-sans">
       <div className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-8 shadow-sm">
         <div className="text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600 shadow-sm">

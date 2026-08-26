@@ -40,6 +40,7 @@ function App() {
         }
       />
 
+      {/* SETUP ROUTES (Supports both /interview and /interview-setup) */}
       <Route
         path="/interview"
         element={
@@ -48,19 +49,34 @@ function App() {
           </ProtectedRoute>
         }
       />
-
       <Route
-        path="/profile"
+        path="/interview-setup"
         element={
           <ProtectedRoute>
-            <Profile />
+            <InterviewSetup />
           </ProtectedRoute>
         }
       />
 
-      {/* SPECIFIC RESULTS ROUTE MUST STAY BEFORE DYNAMIC INTERVIEW ID */}
+      {/* RESULTS ROUTES (Supports all variations to prevent 404) */}
       <Route
         path="/interview/:id/results"
+        element={
+          <ProtectedRoute>
+            <InterviewResults />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/interview-results/:id"
+        element={
+          <ProtectedRoute>
+            <InterviewResults />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/interview-results"
         element={
           <ProtectedRoute>
             <InterviewResults />
@@ -78,6 +94,7 @@ function App() {
         }
       />
 
+      {/* OTHER PROTECTED PAGES */}
       <Route
         path="/history"
         element={
@@ -86,7 +103,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/resume"
         element={
@@ -95,7 +111,14 @@ function App() {
           </ProtectedRoute>
         }
       />
-
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/pricing"
         element={

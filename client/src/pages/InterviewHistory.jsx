@@ -15,17 +15,22 @@ import {
   Loader2,
 } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
+import useInterviewStore from "../store/useInterviewStore";
 import useAuthStore from "../store/authStore";
 
 export default function InterviewHistory() {
   const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user);
-  const userEmail = user?.email || "anonymous";
-
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedInterview, setSelectedInterview] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const user = useAuthStore((state) => state.user);
+  const userEmail =
+    user?.email ||
+    JSON.parse(localStorage.getItem("auth-storage") || "{}")?.state?.user
+      ?.email ||
+    "guest";
 
   useEffect(() => {
     let isMounted = true;
@@ -33,15 +38,17 @@ export default function InterviewHistory() {
     const loadHistory = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("token") || user?.token;
         const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+        const token =
+          localStorage.getItem("token") || useAuthStore.getState().token;
 
         let serverList = [];
         if (token) {
           try {
-            const res = await fetch(`${baseUrl}/api/interview/history`, {
+            const res = await fetch(`${baseUrl}/api/interviews/history`, {
               headers: {
                 Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
               },
             });
             const data = await res.json();
@@ -49,17 +56,21 @@ export default function InterviewHistory() {
               serverList = data.interviews;
             }
           } catch (e) {
-            console.warn("Backend fetch failed, using local user sessions:", e);
+            console.warn("Backend fetch failed, relying on local session storage:", e);
           }
         }
 
-        // Read only this active account's sessions
-        const localKey = `recent_interviews_${userEmail}`;
-        const localSaved = JSON.parse(localStorage.getItem(localKey) || "[]");
+        const storeList = useInterviewStore.getState().interviews || [];
 
-        const combined = [...localSaved, ...serverList];
+        // Scoped local storage key for current logged in account
+        const userStorageKey = `recent_interviews_${userEmail}`;
+        const localSaved = JSON.parse(
+          localStorage.getItem(userStorageKey) || "[]"
+        );
 
-        // Deduplicate
+        const combined = [...localSaved, ...storeList, ...serverList];
+
+        // Deduplicate records
         const unique = Array.from(
           new Map(
             combined.map((item) => [
@@ -81,11 +92,15 @@ export default function InterviewHistory() {
                   day: "numeric",
                   year: "numeric",
                 })
-              : "Today"),
+              : "Recent"),
           duration: item.duration || "15 mins",
           score:
-            item.score ?? item.overallScore ?? item.evaluation?.score ?? 0,
-          totalQuestions: item.totalQuestions || item.questions?.length || 4,
+            item.score ??
+            item.overallScore ??
+            item.evaluation?.score ??
+            0,
+          totalQuestions:
+            item.totalQuestions || item.questions?.length || 4,
           completedQuestions:
             item.completedQuestions || item.answers?.length || 4,
           verdict:
@@ -94,14 +109,24 @@ export default function InterviewHistory() {
           feedback: item.feedback || {
             summary:
               item.evaluation?.summary ||
-              "Completed mock interview assessment.",
+              "Mock interview assessment completed.",
             strengths: item.evaluation?.strengths || [
-              "Clear technical foundation",
+              "Demonstrated structured logical reasoning.",
             ],
-            improvements: item.evaluation?.improvements || [
-              "Expand on edge cases",
-            ],
-            qna: item.qna || [],
+            improvements: item.evaluation?.focusAreas ||
+              item.evaluation?.improvements || [
+                "Elaborate further with specific production metrics.",
+              ],
+            qna:
+              item.qna ||
+              item.questions?.map((q, idx) => ({
+                question: typeof q === "string" ? q : q.question || "Question",
+                answer: item.answers?.[idx] || "Candidate response submitted.",
+                score: item.score ?? 0,
+                feedback:
+                  item.evaluation?.feedback?.[idx] || "Response recorded.",
+              })) ||
+              [],
           },
         }));
 
@@ -117,17 +142,12 @@ export default function InterviewHistory() {
       }
     };
 
-    if (user) {
-      loadHistory();
-    } else {
-      setInterviews([]);
-      setLoading(false);
-    }
+    loadHistory();
 
     return () => {
       isMounted = false;
     };
-  }, [userEmail, user]);
+  }, [userEmail]);
 
   const filteredList = interviews.filter((item) =>
     item.role.toLowerCase().includes(searchTerm.toLowerCase())
@@ -152,7 +172,7 @@ export default function InterviewHistory() {
 
                 <button
                   type="button"
-                  onClick={() => navigate("/start-interview")}
+                  onClick={() => navigate("/interview-setup")}
                   className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500"
                 >
                   <Sparkles size={16} /> New Interview
@@ -249,7 +269,7 @@ export default function InterviewHistory() {
 
                   {filteredList.length === 0 && (
                     <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-400">
-                      No interviews found for this account. Complete a practice interview to see your scorecard here!
+                      No interviews found. Complete an interview to see it here!
                     </div>
                   )}
                 </div>
@@ -269,7 +289,7 @@ export default function InterviewHistory() {
 
                 <button
                   type="button"
-                  onClick={() => navigate("/start-interview")}
+                  onClick={() => navigate("/interview-setup")}
                   className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-500 transition"
                 >
                   <RefreshCw size={14} /> Retake Interview
@@ -382,7 +402,7 @@ export default function InterviewHistory() {
                               {q.question}
                             </p>
                             <span className="shrink-0 rounded-lg bg-blue-100 px-2.5 py-1 text-[11px] font-black text-blue-800">
-                              {q.score || 90} / 100
+                              {q.score || 0} / 100
                             </span>
                           </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   Mic,
@@ -12,31 +12,48 @@ import {
 } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import useInterviewStore from "../store/useInterviewStore";
+import useAuthStore from "../store/authStore";
 
 export default function InterviewRoom() {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
   const saveInterview = useInterviewStore((state) => state.saveInterview);
+  const token = useAuthStore((state) => state.token) || localStorage.getItem("token");
 
-  const setupConfig = location.state || {
-    role: "Frontend Developer",
-    type: "Technical",
-    difficulty: "Medium",
-  };
+  const passedQuestions = useMemo(() => {
+    return location.state?.questions || [];
+  }, [location.state?.questions]);
 
-  const [questions, setQuestions] = useState([]);
+  const setupConfig = useMemo(() => {
+    return (
+      location.state?.setupConfig ||
+      location.state || {
+        role: "Frontend Developer",
+        type: "Technical",
+        difficulty: "Medium",
+      }
+    );
+  }, [location.state]);
+
+  const [questions, setQuestions] = useState(passedQuestions);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState([]);
-  const [currentAnswer, setCurrentAnswer] = useState("");
+  const [answers, setAnswers] = useState(
+    passedQuestions.length > 0 ? Array(passedQuestions.length).fill("") : []
+  );
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(passedQuestions.length === 0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const recognitionRef = useRef(null);
   const baseTextRef = useRef("");
 
-  // Speak Question Logic
+  const currentAnswer = answers[currentIndex] || "";
+  const role = setupConfig.role || "Software Developer";
+  const difficulty = setupConfig.difficulty || "Medium";
+  const type = setupConfig.type || "Technical";
+
   const speakQuestion = (text) => {
     if (!("speechSynthesis" in window) || !text) return;
 
@@ -65,62 +82,73 @@ export default function InterviewRoom() {
     }
   }, []);
 
-  const role = setupConfig.role || "Software Developer";
-  const difficulty = setupConfig.difficulty || "Medium";
-  const type = setupConfig.type || "Technical";
-
-  // Fetch Dynamic Questions from API
+  // Fetch dynamic questions if none were passed
   useEffect(() => {
-    const fetchDynamicQuestions = async () => {
-      setLoading(true);
+    if (passedQuestions && passedQuestions.length > 0) {
+      return;
+    }
 
+    let isMounted = true;
+
+    const fetchDynamicQuestions = async () => {
       const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
       const apiUrl = `${baseUrl}/api/interviews/generate-questions`;
 
       try {
         const response = await fetch(apiUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({ role, difficulty, type }),
         });
 
         const data = await response.json();
 
-        if (response.ok && data.questions && data.questions.length > 0) {
-          setQuestions(data.questions);
-          setAnswers(Array(data.questions.length).fill(""));
-        } else {
-          throw new Error("No questions returned from API");
+        if (isMounted) {
+          if (response.ok && data.questions && data.questions.length > 0) {
+            setQuestions(data.questions);
+            setAnswers(Array(data.questions.length).fill(""));
+          } else {
+            throw new Error("No questions returned from API");
+          }
         }
       } catch (error) {
         console.error("Failed to fetch dynamic questions, using fallback:", error);
-        const fallbackQuestions = [
-          `Can you explain your background and core technical skills as a ${role}?`,
-          "Describe a challenging technical problem you recently solved in your projects.",
-          "How do you handle debugging and optimization in a production environment?",
-          "What processes do you follow to ensure your code is maintainable and well-tested?",
-        ];
-        setQuestions(fallbackQuestions);
-        setAnswers(Array(fallbackQuestions.length).fill(""));
+        if (isMounted) {
+          const fallbackQuestions = [
+            `Can you explain your background and core technical skills as a ${role}?`,
+            "Describe a challenging technical problem you recently solved in your projects.",
+            "How do you handle debugging and optimization in a production environment?",
+            "What processes do you follow to ensure your code is maintainable and well-tested?",
+          ];
+          setQuestions(fallbackQuestions);
+          setAnswers(Array(fallbackQuestions.length).fill(""));
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchDynamicQuestions();
-  }, [role, difficulty, type]);
 
-  // Trigger speech synthesis only when currentIndex or questions array changes
+    return () => {
+      isMounted = false;
+    };
+  }, [passedQuestions, role, difficulty, type, token]);
+
+  // Audio side-effects only (no synchronous setState)
   useEffect(() => {
     if (questions.length > 0 && questions[currentIndex]) {
-      const val = answers[currentIndex] || "";
-      setCurrentAnswer(val);
-      baseTextRef.current = val;
+      baseTextRef.current = answers[currentIndex] || "";
       speakQuestion(questions[currentIndex]);
     }
   }, [currentIndex, questions]);
 
-  // Speech Recognition
+  // Speech Recognition listener
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -144,8 +172,6 @@ export default function InterviewRoom() {
         ? `${base} ${speechTranscript.trim()}`
         : speechTranscript.trim();
 
-      setCurrentAnswer(fullText);
-
       setAnswers((prev) => {
         const copy = [...prev];
         copy[currentIndex] = fullText;
@@ -157,6 +183,12 @@ export default function InterviewRoom() {
     recognition.onend = () => setIsListening(false);
 
     recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
   }, [currentIndex]);
 
   const toggleMic = () => {
@@ -182,7 +214,6 @@ export default function InterviewRoom() {
 
   const handleTextChange = (e) => {
     const val = e.target.value;
-    setCurrentAnswer(val);
     baseTextRef.current = val;
 
     setAnswers((prev) => {
@@ -202,49 +233,51 @@ export default function InterviewRoom() {
       setIsListening(false);
     }
 
-    const updatedAnswers = [...answers];
-    updatedAnswers[currentIndex] = currentAnswer;
-    setAnswers(updatedAnswers);
-
     const targetId = id || Date.now().toString();
 
     if (currentIndex === questions.length - 1) {
-      // Save locally to Zustand
-      const savedSession = saveInterview({
-        id: targetId,
-        setupConfig,
-        questions,
-        answers: updatedAnswers,
-      });
+      setIsSubmitting(true);
+      let evaluatedData = null;
 
-      // Persist to MongoDB backend for History persistence
       try {
-        const token = localStorage.getItem("token");
         const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-        await fetch(`${baseUrl}/api/interviews`, {
+        const evalRes = await fetch(`${baseUrl}/api/interviews/evaluate`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
-            role: setupConfig.role || "Frontend Developer",
-            difficulty: setupConfig.difficulty || "Medium",
-            interviewType: setupConfig.type || "Technical",
-            questions: questions.map((q, i) => ({
-              question: q,
-              answer: updatedAnswers[i] || "",
-            })),
-            status: "completed",
+            questions,
+            answers,
+            role,
           }),
         });
+        const evalJson = await evalRes.json();
+        if (evalRes.ok && evalJson.success) {
+          evaluatedData = evalJson.evaluation;
+        }
       } catch (err) {
-        console.warn("Database persistence failed, relying on local session:", err);
+        console.warn("AI Evaluation fetch failed:", err);
       }
 
-      navigate(`/interview/${savedSession.id}/results`, {
-        state: { answers: updatedAnswers, setupConfig, questions },
+      if (typeof saveInterview === "function") {
+        saveInterview({
+          id: targetId,
+          setupConfig,
+          questions,
+          answers,
+          evaluation: evaluatedData,
+        });
+      }
+
+      navigate(`/interview-results/${targetId}`, {
+        state: {
+          answers,
+          setupConfig,
+          questions,
+          evaluation: evaluatedData,
+        },
       });
     } else {
       setCurrentIndex((prev) => prev + 1);
@@ -257,9 +290,6 @@ export default function InterviewRoom() {
     }
 
     if (currentIndex > 0) {
-      const updatedAnswers = [...answers];
-      updatedAnswers[currentIndex] = currentAnswer;
-      setAnswers(updatedAnswers);
       setCurrentIndex((prev) => prev - 1);
     }
   };
@@ -279,9 +309,9 @@ export default function InterviewRoom() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-          {/* HEADER */}
+          {/* Header */}
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <button
@@ -299,7 +329,7 @@ export default function InterviewRoom() {
                   Question {currentIndex + 1} of {questions.length}
                 </span>
                 <h1 className="mt-1 text-xl font-extrabold text-slate-900 sm:text-2xl">
-                  {role} Session
+                  {role} ({difficulty})
                 </h1>
               </div>
             </div>
@@ -316,9 +346,9 @@ export default function InterviewRoom() {
             </button>
           </div>
 
-          {/* MAIN GRID */}
+          {/* Main Grid */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            {/* LEFT COLUMN: AVATAR & QUESTION DISPLAY */}
+            {/* Left Column: Avatar & Question Display */}
             <div className="lg:col-span-5 flex flex-col gap-4">
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-sm">
                 <img
@@ -352,7 +382,7 @@ export default function InterviewRoom() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN: CANDIDATE ANSWER & CONTROLS */}
+            {/* Right Column: Candidate Input */}
             <div className="lg:col-span-7 flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
               <div>
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -393,7 +423,7 @@ export default function InterviewRoom() {
               <div className="mt-6 flex items-center justify-between gap-3">
                 <button
                   type="button"
-                  disabled={currentIndex === 0}
+                  disabled={currentIndex === 0 || isSubmitting}
                   onClick={handlePrevious}
                   className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                 >
@@ -402,10 +432,15 @@ export default function InterviewRoom() {
 
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={handleNext}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500 active:scale-95 cursor-pointer"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-500 disabled:opacity-60 active:scale-95 cursor-pointer"
                 >
-                  {isLastQuestion ? (
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Evaluating Answers...
+                    </>
+                  ) : isLastQuestion ? (
                     <>
                       Submit Interview <CheckCircle2 size={16} />
                     </>

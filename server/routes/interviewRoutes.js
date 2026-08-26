@@ -15,7 +15,7 @@ import authMiddleware from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // ============================================================================
-// DYNAMIC AI & REAL-TIME EVALUATION ROUTES
+// 1. DYNAMIC AI & REAL-TIME EVALUATION ROUTES
 // ============================================================================
 
 // Dynamic question generation endpoints
@@ -27,17 +27,19 @@ router.post("/backend-questions", generateQuestions);
 router.post("/evaluate", evaluateFullInterview);
 
 // ============================================================================
-// DATABASE PERSISTENCE INTERVIEW ROUTES
+// 2. USER-SPECIFIC & STATIC GET/POST ROUTES (MUST BE ABOVE /:id)
 // ============================================================================
 
 // Create a new interview session
 router.post("/", authMiddleware, createInterview);
 
-// Fetch all interviews belonging to the logged-in user
+// Fetch all interviews belonging to the logged-in user (root & /history)
 router.get("/", authMiddleware, getMyInterviews);
+router.get("/history", authMiddleware, getMyInterviews);
 
-// Fetch details for a specific interview
-router.get("/:id", authMiddleware, getInterviewById);
+// ============================================================================
+// 3. PARAMETERIZED ROUTES (MUST BE AT THE BOTTOM)
+// ============================================================================
 
 // Start an interview session
 router.post("/:id/start", authMiddleware, startInterview);
@@ -50,5 +52,8 @@ router.post("/:id/evaluate", authMiddleware, evaluateInterviewAnswer);
 
 // Complete the interview session and calculate final score
 router.post("/:id/finish", authMiddleware, finishInterview);
+
+// Fetch details for a specific interview by its MongoDB ObjectId
+router.get("/:id", authMiddleware, getInterviewById);
 
 export default router;

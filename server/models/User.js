@@ -28,10 +28,10 @@ const userSchema = new mongoose.Schema(
       default: "candidate",
     },
 
-    // Added Credits Field
+    // Starting Credits set to 100
     credits: {
       type: Number,
-      default: 3, // New users start with 3 free interview credits
+      default: 100,
       min: 0,
     },
 

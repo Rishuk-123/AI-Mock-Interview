@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   CheckCircle2,
@@ -17,6 +17,47 @@ import MainLayout from "../layouts/MainLayout";
 import useInterviewStore from "../store/useInterviewStore";
 import useAuthStore from "../store/authStore";
 
+// Static helper defined outside the component so it never triggers scope or dependency errors
+const generateLocalFallbackScore = (questionsList = [], answersList = []) => {
+  const questionScores = [];
+  const feedbackList = questionsList.map((q, idx) => {
+    const ans = answersList[idx];
+    if (!ans || typeof ans !== "string" || ans.trim().length < 5) {
+      questionScores.push(0);
+      return "No answer provided or response is too brief.";
+    }
+    if (ans.trim().length < 30) {
+      questionScores.push(35);
+      return "Answer is incomplete and lacks technical depth.";
+    }
+    questionScores.push(65);
+    return "Response recorded. Elaborate further with architectural details.";
+  });
+
+  const average =
+    questionScores.length > 0
+      ? Math.round(
+          questionScores.reduce((acc, curr) => acc + curr, 0) /
+            questionScores.length
+        )
+      : 0;
+
+  return {
+    score: average,
+    level:
+      average >= 75
+        ? "Proficient"
+        : average >= 45
+        ? "Intermediate"
+        : "Needs Improvement",
+    focusAreas: [
+      "Provide technical explanations with specific tools and code syntax.",
+      "Address edge cases and production debugging scenarios directly.",
+    ],
+    feedback: feedbackList,
+  };
+};
+
 export default function InterviewResults() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -24,151 +65,175 @@ export default function InterviewResults() {
   const savedToStorageRef = useRef(false);
 
   const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token) || localStorage.getItem("token");
+  
+  const userEmail = useMemo(() => {
+    return user?.email || "anonymous";
+  }, [user?.email]);
+
   const getInterviewById = useInterviewStore((state) => state.getInterviewById);
-  const addInterviewToStore = useInterviewStore((state) => state.addInterview);
+  const savedSession = useMemo(() => {
+    return typeof getInterviewById === "function" && id ? getInterviewById(id) : null;
+  }, [getInterviewById, id]);
 
-  const savedSession = typeof getInterviewById === "function" && id ? getInterviewById(id) : null;
+  const answers = useMemo(() => {
+    return location.state?.answers || savedSession?.answers || [];
+  }, [location.state?.answers, savedSession?.answers]);
 
-  // Read data passed from interview session
-  const answers = location.state?.answers || savedSession?.answers || [];
-  const questions = location.state?.questions || savedSession?.questions || [];
-  const setupConfig = location.state?.setupConfig || savedSession?.setupConfig || {
-    role: "Software Developer",
-    difficulty: "Medium",
-  };
+  const questions = useMemo(() => {
+    return location.state?.questions || savedSession?.questions || [];
+  }, [location.state?.questions, savedSession?.questions]);
 
-  const preloadedEvaluation = location.state?.evaluation || savedSession?.evaluation || null;
-  const [evaluation, setEvaluation] = useState(preloadedEvaluation);
-  const [loading, setLoading] = useState(!preloadedEvaluation);
-
-  const generateLocalFallbackScore = (questionsList, answersList) => {
-    const validAnswers = answersList.filter((a) => a && typeof a === "string" && a.trim().length > 10);
-    const ratio = questionsList.length > 0 ? validAnswers.length / questionsList.length : 0;
-    const estimatedScore = Math.max(50, Math.round(ratio * 85));
-
-    return {
-      score: estimatedScore,
-      level: estimatedScore >= 70 ? "Proficient" : estimatedScore >= 40 ? "Intermediate" : "Needs Improvement",
-      focusAreas: [
-        "Elaborate further with specific production examples and tools.",
-        "Include metrics or quantifiable outcomes in your explanations.",
-      ],
-      feedback: answersList.map((ans) =>
-        ans && typeof ans === "string" && ans.trim().length > 10
-          ? "Good concise answer provided. Consider expanding on real-world application or edge cases."
-          : "Answer was too brief or empty. Provide clear technical explanations."
-      ),
+  const setupConfig = useMemo(() => {
+    return location.state?.setupConfig || savedSession?.setupConfig || {
+      role: "Software Developer",
+      difficulty: "Medium",
     };
-  };
+  }, [location.state?.setupConfig, savedSession?.setupConfig]);
+
+  const preloadedEvaluation = useMemo(() => {
+    return location.state?.evaluation || savedSession?.evaluation || null;
+  }, [location.state?.evaluation, savedSession?.evaluation]);
+
+  const [evaluation, setEvaluation] = useState(preloadedEvaluation);
+const [loading, setLoading] = useState(!preloadedEvaluation && Boolean(questions?.length));
 
   useEffect(() => {
-    if (preloadedEvaluation) {
-      setEvaluation(preloadedEvaluation);
-      setLoading(false);
-      return;
-    }
+  if (preloadedEvaluation || !questions || questions.length === 0) {
+    return;
+  }
 
-    const runEvaluation = async () => {
-      setLoading(true);
-      try {
-        const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  let isMounted = true;
 
-        const response = await fetch(`${baseUrl}/api/interviews/evaluate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            questions,
-            answers,
-            role: setupConfig.role,
-          }),
-        });
+  const runEvaluation = async () => {
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-        const data = await response.json();
+      const response = await fetch(`${baseUrl}/api/interviews/evaluate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          questions,
+          answers,
+          role: setupConfig.role,
+        }),
+      });
 
+      const data = await response.json();
+
+      if (isMounted) {
         if (response.ok && data.success && data.evaluation) {
           setEvaluation(data.evaluation);
         } else {
           setEvaluation(generateLocalFallbackScore(questions, answers));
         }
-      } catch (error) {
-        console.error("Evaluation request error:", error);
+      }
+    } catch (error) {
+      console.error("Evaluation request error:", error);
+      if (isMounted) {
         setEvaluation(generateLocalFallbackScore(questions, answers));
-      } finally {
+      }
+    } finally {
+      if (isMounted) {
         setLoading(false);
       }
-    };
-
-    if (questions && questions.length > 0) {
-      runEvaluation();
-    } else {
-      setLoading(false);
     }
-  }, [preloadedEvaluation, questions, answers, setupConfig.role]);
+  };
 
-  // Robust Save Effect
+  runEvaluation();
+
+  return () => {
+    isMounted = false;
+  };
+}, [preloadedEvaluation, questions, answers, setupConfig.role, token]);
+  // Persist session to user-scoped storage
   useEffect(() => {
     if (loading || !evaluation || savedToStorageRef.current) return;
     savedToStorageRef.current = true;
 
-    // Determine current user identifier reliably
-    const activeEmail = user?.email || JSON.parse(localStorage.getItem("auth-storage") || "{}")?.state?.user?.email || "anonymous";
-
     const sessionEntry = {
       id: id || `interview_${Date.now()}`,
-      userEmail: activeEmail,
+      userEmail,
       role: setupConfig.role || "Software Developer",
       difficulty: setupConfig.difficulty || "Medium",
-      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      date: new Date().toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
       duration: "15 mins",
-      score: evaluation.score ?? 80,
+      score: evaluation.score ?? 0,
       totalQuestions: questions.length || 4,
-      completedQuestions: answers.filter((a) => a && typeof a === "string" && a.trim()).length || 4,
-      verdict: evaluation.level || (evaluation.score >= 75 ? "Proficient" : "Needs Review"),
+      completedQuestions:
+        answers.filter((a) => a && typeof a === "string" && a.trim()).length || 0,
+      verdict:
+        evaluation.level || (evaluation.score >= 75 ? "Proficient" : "Needs Review"),
       evaluation,
       questions,
       answers,
       feedback: {
         summary: `Completed ${setupConfig.role} mock interview assessment.`,
         strengths: [
-          "Clear explanation of primary technical concepts.",
-          "Demonstrated structured logical reasoning across interview prompts.",
+          "Demonstrated technical reasoning across prompts.",
         ],
         improvements: evaluation.focusAreas || [
           "Elaborate further with specific production metrics.",
-          "Include error-handling edge cases in code architecture.",
         ],
         qna: questions.map((q, idx) => ({
           question: typeof q === "string" ? q : q.question || "Question",
-          answer: answers[idx] || "Candidate response submitted.",
-          score: Math.round(evaluation.score ?? 80),
-          feedback: evaluation.feedback?.[idx] || "Solid response provided.",
+          answer: answers[idx] || "No response provided.",
+          score: Math.round(evaluation.score ?? 0),
+          feedback: evaluation.feedback?.[idx] || "Response recorded.",
         })),
       },
     };
 
-    // 1. Save into user-scoped localStorage key
-    const userStorageKey = `recent_interviews_${activeEmail}`;
-    const existingUserList = JSON.parse(localStorage.getItem(userStorageKey) || "[]");
-    const updatedList = [sessionEntry, ...existingUserList.filter((item) => item.id !== sessionEntry.id)];
-    localStorage.setItem(userStorageKey, JSON.stringify(updatedList));
-
-    // 2. Add to Zustand store if action exists
-    if (typeof addInterviewToStore === "function") {
-      addInterviewToStore(sessionEntry);
-    }
-  }, [loading, evaluation, id, setupConfig, questions, answers, user, addInterviewToStore]);
+    const userStorageKey = `recent_interviews_${userEmail}`;
+    const existing = JSON.parse(localStorage.getItem(userStorageKey) || "[]");
+    const filtered = existing.filter((item) => item.id !== sessionEntry.id);
+    localStorage.setItem(userStorageKey, JSON.stringify([sessionEntry, ...filtered]));
+  }, [loading, evaluation, id, setupConfig, questions, answers, userEmail]);
 
   const score = evaluation?.score ?? 0;
-  const focusAreas = evaluation?.focusAreas || ["Provide more detail in your answers", "Focus on technical depth"];
+  const focusAreas =
+    evaluation?.focusAreas || [
+      "Provide more technical detail in answers",
+      "Focus on architectural depth",
+    ];
 
   const getProgressStatus = (scoreValue) => {
-    if (scoreValue >= 75) return { label: "High Proficiency", color: "bg-emerald-500", text: "text-emerald-600", bgLight: "bg-emerald-50", border: "border-emerald-200" };
-    if (scoreValue >= 40) return { label: "Medium Proficiency", color: "bg-amber-500", text: "text-amber-600", bgLight: "bg-amber-50", border: "border-amber-200" };
-    return { label: "Low Proficiency", color: "bg-red-500", text: "text-red-600", bgLight: "bg-red-50", border: "border-red-200" };
+    if (scoreValue >= 75)
+      return {
+        label: "High Proficiency",
+        color: "bg-emerald-500",
+        text: "text-emerald-600",
+        bgLight: "bg-emerald-50",
+        border: "border-emerald-200",
+      };
+    if (scoreValue >= 45)
+      return {
+        label: "Medium Proficiency",
+        color: "bg-amber-500",
+        text: "text-amber-600",
+        bgLight: "bg-amber-50",
+        border: "border-amber-200",
+      };
+    return {
+      label: "Low Proficiency",
+      color: "bg-red-500",
+      text: "text-red-600",
+      bgLight: "bg-red-50",
+      border: "border-red-200",
+    };
   };
 
   const status = getProgressStatus(score);
-  const validAnswersCount = answers.filter((a) => a && typeof a === "string" && a.trim().length > 3).length;
+  const validAnswersCount = answers.filter(
+    (a) => a && typeof a === "string" && a.trim().length > 3
+  ).length;
 
   const handleDownloadPDF = () => {
     const reportElement = document.getElementById("interview-report-content");
@@ -227,10 +292,9 @@ export default function InterviewResults() {
     <MainLayout>
       <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-12">
         <div className="mx-auto max-w-4xl px-5 py-8 sm:px-7 lg:px-8">
-          
           <div id="interview-report-content" className="space-y-6">
             
-            {/* HEADER CARD */}
+            {/* Header Card */}
             <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8">
               <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
@@ -257,7 +321,7 @@ export default function InterviewResults() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigate("/start-interview")}
+                    onClick={() => navigate("/interview-setup")}
                     className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
                   >
                     <RotateCcw size={15} /> Retake
@@ -265,7 +329,7 @@ export default function InterviewResults() {
                 </div>
               </div>
 
-              {/* STATS OVERVIEW */}
+              {/* Stats Overview */}
               <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
@@ -296,7 +360,7 @@ export default function InterviewResults() {
               </div>
             </div>
 
-            {/* PROGRESS GRAPH CARD */}
+            {/* Performance Progress */}
             <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 font-extrabold text-slate-900 text-base">
@@ -331,7 +395,7 @@ export default function InterviewResults() {
                 <div className="p-2">
                   <p className="text-[11px] font-bold text-slate-400 uppercase">Quality Assessment</p>
                   <p className={`text-lg font-extrabold mt-1 ${status.text}`}>
-                    {score < 40 ? "Low" : score < 75 ? "Medium" : "High"}
+                    {score < 45 ? "Low" : score < 75 ? "Medium" : "High"}
                   </p>
                 </div>
                 <div className="p-2">
@@ -349,7 +413,7 @@ export default function InterviewResults() {
               </div>
             </div>
 
-            {/* AI FOCUS AREAS */}
+            {/* Focus Areas */}
             <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-6 shadow-sm">
               <div className="flex items-center gap-2 text-blue-700 font-extrabold text-base mb-3">
                 <Target size={20} /> What You Should Focus On
@@ -369,7 +433,7 @@ export default function InterviewResults() {
               )}
             </div>
 
-            {/* QUESTION BREAKDOWN */}
+            {/* Questions Breakdown */}
             <div className="space-y-6">
               <h2 className="text-lg font-extrabold text-slate-900">Detailed Question Responses</h2>
               {questions.map((q, idx) => {
@@ -416,7 +480,7 @@ export default function InterviewResults() {
                         ) : feedback ? (
                           feedback
                         ) : (
-                          "Provide detailed technical explanations and clear project examples to increase your overall score."
+                          "Provide technical depth and code examples to improve response clarity."
                         )}
                       </p>
                     </div>
@@ -427,6 +491,7 @@ export default function InterviewResults() {
 
           </div>
 
+          {/* Bottom Actions */}
           <div className="mt-8 flex items-center justify-between gap-4 no-print">
             <button
               type="button"
@@ -436,7 +501,6 @@ export default function InterviewResults() {
               <ArrowLeft size={16} /> Return to History
             </button>
           </div>
-
         </div>
       </div>
     </MainLayout>
