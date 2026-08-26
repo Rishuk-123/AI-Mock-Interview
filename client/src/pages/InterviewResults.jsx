@@ -15,12 +15,16 @@ import {
 } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import useInterviewStore from "../store/useInterviewStore";
+import useAuthStore from "../store/authStore";
 
 export default function InterviewResults() {
   const location = useLocation();
   const navigate = useNavigate();
   const { id } = useParams();
   const savedToStorageRef = useRef(false);
+
+  const user = useAuthStore((state) => state.user);
+  const userId = user?._id || user?.id || user?.email || "anonymous";
 
   const getInterviewById = useInterviewStore((state) => state.getInterviewById);
   const savedSession = typeof getInterviewById === "function" && id ? getInterviewById(id) : null;
@@ -104,13 +108,14 @@ export default function InterviewResults() {
     }
   }, [preloadedEvaluation, questions, answers, setupConfig.role]);
 
-  // Persist session to localStorage so it appears in Interview History
+  // Persist session into user-specific localStorage key
   useEffect(() => {
     if (loading || !evaluation || savedToStorageRef.current) return;
     savedToStorageRef.current = true;
 
     const sessionEntry = {
       id: id || `interview_${Date.now()}`,
+      userId,
       role: setupConfig.role || "Software Developer",
       difficulty: setupConfig.difficulty || "Medium",
       date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
@@ -141,10 +146,11 @@ export default function InterviewResults() {
       },
     };
 
-    const existing = JSON.parse(localStorage.getItem("recent_interviews") || "[]");
+    const userKey = `recent_interviews_${userId}`;
+    const existing = JSON.parse(localStorage.getItem(userKey) || "[]");
     const filtered = existing.filter((item) => item.id !== sessionEntry.id);
-    localStorage.setItem("recent_interviews", JSON.stringify([sessionEntry, ...filtered]));
-  }, [loading, evaluation, id, setupConfig, questions, answers]);
+    localStorage.setItem(userKey, JSON.stringify([sessionEntry, ...filtered]));
+  }, [loading, evaluation, id, setupConfig, questions, answers, userId]);
 
   const score = evaluation?.score ?? 0;
   const focusAreas = evaluation?.focusAreas || ["Provide more detail in your answers", "Focus on technical depth"];
@@ -158,7 +164,7 @@ export default function InterviewResults() {
   const status = getProgressStatus(score);
   const validAnswersCount = answers.filter((a) => a && typeof a === "string" && a.trim().length > 3).length;
 
-  // Isolated Report PDF Download Handler
+  // Isolated PDF Download via hidden IFrame
   const handleDownloadPDF = () => {
     const reportElement = document.getElementById("interview-report-content");
     if (!reportElement) return;
@@ -173,8 +179,6 @@ export default function InterviewResults() {
     document.body.appendChild(printFrame);
 
     const frameDoc = printFrame.contentWindow.document;
-
-    // Collect all loaded styling stylesheets
     const styles = Array.from(document.querySelectorAll("link[rel='stylesheet'], style"))
       .map((el) => el.outerHTML)
       .join("");
@@ -219,7 +223,7 @@ export default function InterviewResults() {
       <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-12">
         <div className="mx-auto max-w-4xl px-5 py-8 sm:px-7 lg:px-8">
           
-          {/* ISOLATED REPORT WRAPPER */}
+          {/* ISOLATED REPORT CONTAINER */}
           <div id="interview-report-content" className="space-y-6">
             
             {/* HEADER CARD */}
@@ -362,7 +366,7 @@ export default function InterviewResults() {
               )}
             </div>
 
-            {/* QUESTION BREAKDOWN */}
+            {/* QUESTION BREAKDOWN WITH AI FEEDBACK */}
             <div className="space-y-6">
               <h2 className="text-lg font-extrabold text-slate-900">Detailed Question Responses</h2>
               {questions.map((q, idx) => {

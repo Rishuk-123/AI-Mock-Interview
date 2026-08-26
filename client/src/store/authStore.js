@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import api from "../services/api";
+import useInterviewStore from "./useInterviewStore";
 
 const useAuthStore = create((set, get) => ({
   user: null,
@@ -33,10 +34,18 @@ const useAuthStore = create((set, get) => ({
 
       localStorage.setItem("token", res.data.token);
 
+      // Clear any previous user's cached store state
+      if (typeof useInterviewStore.getState().reset === "function") {
+        useInterviewStore.getState().reset();
+      } else {
+        useInterviewStore.setState({ interviews: [], currentInterview: null });
+      }
+
       set({
         token: res.data.token,
         user: res.data.user,
         loading: false,
+        initialized: true,
       });
 
       return res.data;
@@ -105,10 +114,18 @@ const useAuthStore = create((set, get) => ({
   logout: () => {
     localStorage.removeItem("token");
 
+    // Clear active interview state from store memory
+    if (typeof useInterviewStore.getState().reset === "function") {
+      useInterviewStore.getState().reset();
+    } else {
+      useInterviewStore.setState({ interviews: [], currentInterview: null });
+    }
+
     set({
       token: null,
       user: null,
       initialized: true,
+      loading: false,
     });
   },
 }));

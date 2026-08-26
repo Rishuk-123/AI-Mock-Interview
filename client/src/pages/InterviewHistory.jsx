@@ -15,11 +15,13 @@ import {
   Loader2,
 } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
-import useInterviewStore from "../store/useInterviewStore";
 import useAuthStore from "../store/authStore";
 
 export default function InterviewHistory() {
   const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+  const userEmail = user?.email || "anonymous";
+
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedInterview, setSelectedInterview] = useState(null);
@@ -31,8 +33,8 @@ export default function InterviewHistory() {
     const loadHistory = async () => {
       setLoading(true);
       try {
+        const token = localStorage.getItem("token") || user?.token;
         const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-        const token = localStorage.getItem("token") || useAuthStore.getState().user?.token;
 
         let serverList = [];
         if (token) {
@@ -47,40 +49,59 @@ export default function InterviewHistory() {
               serverList = data.interviews;
             }
           } catch (e) {
-            console.warn("Backend fetch failed, using local sessions:", e);
+            console.warn("Backend fetch failed, using local user sessions:", e);
           }
         }
 
-        const storeList = useInterviewStore.getState().interviews || [];
-        const localSaved = JSON.parse(localStorage.getItem("recent_interviews") || "[]");
+        // Read only this active account's sessions
+        const localKey = `recent_interviews_${userEmail}`;
+        const localSaved = JSON.parse(localStorage.getItem(localKey) || "[]");
 
-        const combined = [...localSaved, ...storeList, ...serverList];
+        const combined = [...localSaved, ...serverList];
 
         // Deduplicate
         const unique = Array.from(
-          new Map(combined.map((item) => [item.id || item._id || `${item.role}_${item.date}`, item])).values()
+          new Map(
+            combined.map((item) => [
+              item.id || item._id || `${item.role}_${item.date}`,
+              item,
+            ])
+          ).values()
         );
 
         const formatted = unique.map((item) => ({
           id: item.id || item._id || Math.random().toString(),
-          role: item.role || item.jobRole || "Frontend Developer",
+          role: item.role || item.jobRole || "Software Developer",
           difficulty: item.difficulty || item.level || "Medium",
-          date: item.date || (item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Today"),
-          duration: item.duration || "14 mins",
-          score: item.score ?? item.overallScore ?? item.evaluation?.score ?? 90,
+          date:
+            item.date ||
+            (item.createdAt
+              ? new Date(item.createdAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })
+              : "Today"),
+          duration: item.duration || "15 mins",
+          score:
+            item.score ?? item.overallScore ?? item.evaluation?.score ?? 0,
           totalQuestions: item.totalQuestions || item.questions?.length || 4,
-          completedQuestions: item.completedQuestions || item.answers?.length || 4,
-          verdict: item.verdict || (item.score >= 80 ? "Proficient" : "Competent"),
+          completedQuestions:
+            item.completedQuestions || item.answers?.length || 4,
+          verdict:
+            item.verdict ||
+            (item.score >= 75 ? "Proficient" : "Needs Review"),
           feedback: item.feedback || {
-            summary: item.evaluation?.summary || "Comprehensive understanding of frontend fundamentals.",
-            strengths: item.evaluation?.strengths || ["Accurate Event Loop breakdown", "Clear syntax articulation"],
-            improvements: item.evaluation?.improvements || ["Detail requestAnimationFrame execution order"],
-            qna: item.qna || (item.questions?.map((q, idx) => ({
-              question: typeof q === "string" ? q : q.question,
-              answer: item.answers?.[idx] || "Candidate provided answer.",
-              score: 90,
-              feedback: "Accurate response.",
-            })) || []),
+            summary:
+              item.evaluation?.summary ||
+              "Completed mock interview assessment.",
+            strengths: item.evaluation?.strengths || [
+              "Clear technical foundation",
+            ],
+            improvements: item.evaluation?.improvements || [
+              "Expand on edge cases",
+            ],
+            qna: item.qna || [],
           },
         }));
 
@@ -96,12 +117,17 @@ export default function InterviewHistory() {
       }
     };
 
-    loadHistory();
+    if (user) {
+      loadHistory();
+    } else {
+      setInterviews([]);
+      setLoading(false);
+    }
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [userEmail, user]);
 
   const filteredList = interviews.filter((item) =>
     item.role.toLowerCase().includes(searchTerm.toLowerCase())
@@ -111,7 +137,6 @@ export default function InterviewHistory() {
     <MainLayout>
       <div className="min-h-screen bg-slate-50 p-6 text-slate-900 sm:p-8 lg:p-10">
         <div className="mx-auto max-w-6xl space-y-8">
-          
           {/* VIEW 1: HISTORY LIST */}
           {!selectedInterview ? (
             <div className="space-y-6">
@@ -136,7 +161,10 @@ export default function InterviewHistory() {
 
               {/* SEARCH BAR */}
               <div className="relative">
-                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                />
                 <input
                   type="text"
                   placeholder="Search by job role or position..."
@@ -150,7 +178,9 @@ export default function InterviewHistory() {
               {loading && (
                 <div className="flex h-48 flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white shadow-sm">
                   <Loader2 size={30} className="animate-spin text-blue-600 mb-2" />
-                  <p className="text-xs font-semibold text-slate-500">Loading interview records...</p>
+                  <p className="text-xs font-semibold text-slate-500">
+                    Loading interview records...
+                  </p>
                 </div>
               )}
 
@@ -169,7 +199,9 @@ export default function InterviewHistory() {
 
                         <div>
                           <div className="flex items-center gap-2.5">
-                            <h3 className="text-base font-bold text-slate-900">{interview.role}</h3>
+                            <h3 className="text-base font-bold text-slate-900">
+                              {interview.role}
+                            </h3>
                             <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
                               {interview.difficulty}
                             </span>
@@ -183,7 +215,12 @@ export default function InterviewHistory() {
                               <Clock size={13} /> {interview.duration}
                             </span>
                             <span className="flex items-center gap-1">
-                              <CheckCircle2 size={13} className="text-emerald-500" /> {interview.completedQuestions}/{interview.totalQuestions} Answered
+                              <CheckCircle2
+                                size={13}
+                                className="text-emerald-500"
+                              />{" "}
+                              {interview.completedQuestions}/
+                              {interview.totalQuestions} Answered
                             </span>
                           </div>
                         </div>
@@ -191,8 +228,12 @@ export default function InterviewHistory() {
 
                       <div className="flex items-center justify-between gap-6 border-t border-slate-100 pt-4 sm:border-t-0 sm:pt-0">
                         <div className="text-right sm:text-center">
-                          <span className="text-2xl font-black text-blue-600">{interview.score}%</span>
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">AI Score</p>
+                          <span className="text-2xl font-black text-blue-600">
+                            {interview.score}%
+                          </span>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            AI Score
+                          </p>
                         </div>
 
                         <button
@@ -208,7 +249,7 @@ export default function InterviewHistory() {
 
                   {filteredList.length === 0 && (
                     <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-400">
-                      No interviews found. Complete an interview to see it here!
+                      No interviews found for this account. Complete a practice interview to see your scorecard here!
                     </div>
                   )}
                 </div>
@@ -246,7 +287,8 @@ export default function InterviewHistory() {
                       {selectedInterview.role} Evaluation
                     </h2>
                     <p className="mt-1 text-xs text-slate-400">
-                      Completed on {selectedInterview.date} • Duration {selectedInterview.duration}
+                      Completed on {selectedInterview.date} • Duration{" "}
+                      {selectedInterview.duration}
                     </p>
                   </div>
 
@@ -255,15 +297,21 @@ export default function InterviewHistory() {
                       {selectedInterview.score}%
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-900">{selectedInterview.verdict}</p>
-                      <p className="text-xs text-slate-500">Overall Performance Index</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {selectedInterview.verdict}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Overall Performance Index
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-6 space-y-6">
                   <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">AI Executive Summary</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      AI Executive Summary
+                    </p>
                     <p className="mt-1.5 text-xs font-semibold text-slate-700 leading-relaxed">
                       {selectedInterview.feedback?.summary}
                     </p>
@@ -275,12 +323,17 @@ export default function InterviewHistory() {
                         <CheckCircle2 size={16} /> Key Strengths
                       </h4>
                       <ul className="space-y-2">
-                        {selectedInterview.feedback?.strengths?.map((str, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-xs font-medium text-slate-700">
-                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                            {str}
-                          </li>
-                        ))}
+                        {selectedInterview.feedback?.strengths?.map(
+                          (str, idx) => (
+                            <li
+                              key={idx}
+                              className="flex items-start gap-2 text-xs font-medium text-slate-700"
+                            >
+                              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                              {str}
+                            </li>
+                          )
+                        )}
                       </ul>
                     </div>
 
@@ -289,12 +342,17 @@ export default function InterviewHistory() {
                         <AlertCircle size={16} /> Areas For Improvement
                       </h4>
                       <ul className="space-y-2">
-                        {selectedInterview.feedback?.improvements?.map((imp, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-xs font-medium text-slate-700">
-                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
-                            {imp}
-                          </li>
-                        ))}
+                        {selectedInterview.feedback?.improvements?.map(
+                          (imp, idx) => (
+                            <li
+                              key={idx}
+                              className="flex items-start gap-2 text-xs font-medium text-slate-700"
+                            >
+                              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                              {imp}
+                            </li>
+                          )
+                        )}
                       </ul>
                     </div>
                   </div>
@@ -302,42 +360,52 @@ export default function InterviewHistory() {
               </div>
 
               {/* QUESTION BY QUESTION BREAKDOWN */}
-              {selectedInterview.feedback?.qna && selectedInterview.feedback.qna.length > 0 && (
-                <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm space-y-6">
-                  <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
-                    <BarChart2 size={18} className="text-blue-600" />
-                    <h3 className="text-base font-bold text-slate-900">Question-by-Question Breakdown</h3>
-                  </div>
+              {selectedInterview.feedback?.qna &&
+                selectedInterview.feedback.qna.length > 0 && (
+                  <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm space-y-6">
+                    <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
+                      <BarChart2 size={18} className="text-blue-600" />
+                      <h3 className="text-base font-bold text-slate-900">
+                        Question-by-Question Breakdown
+                      </h3>
+                    </div>
 
-                  <div className="space-y-4">
-                    {selectedInterview.feedback.qna.map((q, idx) => (
-                      <div key={idx} className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 space-y-3">
-                        <div className="flex items-start justify-between gap-4">
-                          <p className="text-xs font-bold text-slate-900">
-                            <span className="text-blue-600">Q{idx + 1}:</span> {q.question}
+                    <div className="space-y-4">
+                      {selectedInterview.feedback.qna.map((q, idx) => (
+                        <div
+                          key={idx}
+                          className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 space-y-3"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <p className="text-xs font-bold text-slate-900">
+                              <span className="text-blue-600">Q{idx + 1}:</span>{" "}
+                              {q.question}
+                            </p>
+                            <span className="shrink-0 rounded-lg bg-blue-100 px-2.5 py-1 text-[11px] font-black text-blue-800">
+                              {q.score || 90} / 100
+                            </span>
+                          </div>
+
+                          <div className="rounded-xl border border-slate-200/60 bg-white p-3 text-xs text-slate-600">
+                            <span className="font-bold text-slate-700">
+                              Your Response:{" "}
+                            </span>
+                            "{q.answer}"
+                          </div>
+
+                          <p className="text-[11px] font-semibold text-slate-500">
+                            <span className="font-bold text-indigo-600">
+                              Feedback:{" "}
+                            </span>
+                            {q.feedback}
                           </p>
-                          <span className="shrink-0 rounded-lg bg-blue-100 px-2.5 py-1 text-[11px] font-black text-blue-800">
-                            {q.score || 90} / 100
-                          </span>
                         </div>
-
-                        <div className="rounded-xl border border-slate-200/60 bg-white p-3 text-xs text-slate-600">
-                          <span className="font-bold text-slate-700">Your Response: </span>
-                          "{q.answer}"
-                        </div>
-
-                        <p className="text-[11px] font-semibold text-slate-500">
-                          <span className="font-bold text-indigo-600">Feedback: </span>
-                          {q.feedback}
-                        </p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           )}
-
         </div>
       </div>
     </MainLayout>

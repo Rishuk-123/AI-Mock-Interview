@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   User,
   Mail,
@@ -22,25 +22,51 @@ import {
 } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import useAuthStore from "../store/authStore";
-import useInterviewStore from "../store/useInterviewStore";
 
 export default function Profile() {
   const user = useAuthStore((state) => state.user);
-  const interviews = useInterviewStore((state) => state.interviews) || [];
-  
+  const userEmail = user?.email || "anonymous";
   const [copied, setCopied] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [userInterviews, setUserInterviews] = useState([]);
+
+  // Load interviews strictly belonging to this logged-in account
+  useEffect(() => {
+    if (!user) {
+      setUserInterviews([]);
+      return;
+    }
+    const localKey = `recent_interviews_${userEmail}`;
+    const saved = JSON.parse(localStorage.getItem(localKey) || "[]");
+    setUserInterviews(saved);
+  }, [userEmail, user]);
+
+  const totalInterviews = userInterviews.length;
+  const avgScore =
+    totalInterviews > 0
+      ? Math.round(
+          userInterviews.reduce((acc, curr) => acc + (curr.score || 0), 0) /
+            totalInterviews
+        )
+      : 0;
+
+  const targetStatus =
+    totalInterviews === 0
+      ? "New"
+      : avgScore >= 75
+      ? "Ready"
+      : "In Progress";
 
   // Profile Form State
   const [formData, setFormData] = useState({
-    name: user?.name || "Khushi",
-    email: user?.email || "alice12@gmail.com",
-    college: "NIT Jalandhar",
-    degree: "B.Tech",
-    department: "Information Technology",
-    graduationYear: "2028",
-    gender: "Female",
-    experience: "Fresher",
+    name: user?.name || "Candidate",
+    email: user?.email || "",
+    college: user?.college || "NIT Jalandhar",
+    degree: user?.degree || "B.Tech",
+    department: user?.department || "Information Technology",
+    graduationYear: user?.graduationYear || "2028",
+    gender: user?.gender || "Female",
+    experience: user?.experience || "Fresher",
     skills: user?.skills || [
       "HTML",
       "CSS",
@@ -52,16 +78,6 @@ export default function Profile() {
   });
 
   const [newSkillInput, setNewSkillInput] = useState("");
-
-  // Computed metrics
-  const totalInterviews = interviews.length > 0 ? interviews.length : 3;
-  const avgScore =
-    interviews.length > 0
-      ? Math.round(
-          interviews.reduce((acc, curr) => acc + (curr.score || curr.evaluation?.score || 0), 0) /
-            interviews.length
-        )
-      : 84;
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(formData.email);
@@ -76,7 +92,10 @@ export default function Profile() {
 
   const handleAddSkill = (e) => {
     e.preventDefault();
-    if (newSkillInput.trim() && !formData.skills.includes(newSkillInput.toUpperCase().trim())) {
+    if (
+      newSkillInput.trim() &&
+      !formData.skills.includes(newSkillInput.toUpperCase().trim())
+    ) {
       setFormData((prev) => ({
         ...prev,
         skills: [...prev.skills, newSkillInput.toUpperCase().trim()],
@@ -94,7 +113,6 @@ export default function Profile() {
 
   const handleSaveProfile = (e) => {
     e.preventDefault();
-    // Optional: send formData to backend via fetch/axios here
     setIsEditModalOpen(false);
   };
 
@@ -102,7 +120,6 @@ export default function Profile() {
     <MainLayout>
       <div className="min-h-screen bg-slate-50 p-6 text-slate-900 sm:p-8 lg:p-10">
         <div className="mx-auto max-w-6xl space-y-8">
-          
           {/* PAGE TITLE & EDIT BUTTON */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -125,13 +142,12 @@ export default function Profile() {
 
           {/* MAIN PROFILE CARD */}
           <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm space-y-10">
-            
             {/* 1. PROFILE HEADER SECTION WITH STAT CARDS */}
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-8">
               {/* Left: Avatar + Info */}
               <div className="flex items-center gap-5">
                 <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-3xl font-black text-white shadow-lg shadow-blue-500/20 ring-4 ring-blue-50">
-                  {formData.name ? formData.name.charAt(0).toUpperCase() : "K"}
+                  {formData.name ? formData.name.charAt(0).toUpperCase() : "U"}
                   <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white ring-2 ring-white">
                     <CheckCircle2 size={14} />
                   </span>
@@ -149,41 +165,60 @@ export default function Profile() {
 
                   <div className="mt-1 flex items-center gap-2 text-xs font-medium text-slate-600">
                     <Mail size={14} className="text-slate-400" />
-                    <span>{formData.email}</span>
-                    <button
-                      type="button"
-                      onClick={handleCopyEmail}
-                      className="ml-1 text-slate-400 hover:text-blue-600 transition cursor-pointer"
-                      title="Copy Email"
-                    >
-                      {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
-                    </button>
+                    <span>{formData.email || "No email available"}</span>
+                    {formData.email && (
+                      <button
+                        type="button"
+                        onClick={handleCopyEmail}
+                        className="ml-1 text-slate-400 hover:text-blue-600 transition cursor-pointer"
+                        title="Copy Email"
+                      >
+                        {copied ? (
+                          <Check size={13} className="text-emerald-500" />
+                        ) : (
+                          <Copy size={13} />
+                        )}
+                      </button>
+                    )}
                   </div>
 
                   <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-emerald-600">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" /> Account Active
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" /> Account
+                    Active
                   </p>
                 </div>
               </div>
 
-              {/* Right: Quick Stat Cards */}
+              {/* Right: Dynamic Account-Specific Metrics */}
               <div className="flex items-center gap-3">
                 <div className="flex h-24 w-24 flex-col items-center justify-center rounded-2xl border border-slate-100 bg-slate-50/70 p-2 text-center shadow-xs">
                   <Flame size={18} className="text-blue-600" />
-                  <p className="mt-1 text-lg font-black text-slate-900">{totalInterviews}</p>
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Interviews</p>
+                  <p className="mt-1 text-lg font-black text-slate-900">
+                    {totalInterviews}
+                  </p>
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                    Interviews
+                  </p>
                 </div>
 
                 <div className="flex h-24 w-24 flex-col items-center justify-center rounded-2xl border border-slate-100 bg-slate-50/70 p-2 text-center shadow-xs">
                   <Trophy size={18} className="text-indigo-600" />
-                  <p className="mt-1 text-lg font-black text-indigo-600">{avgScore}%</p>
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Avg Score</p>
+                  <p className="mt-1 text-lg font-black text-indigo-600">
+                    {avgScore}%
+                  </p>
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                    Avg Score
+                  </p>
                 </div>
 
                 <div className="flex h-24 w-24 flex-col items-center justify-center rounded-2xl border border-slate-100 bg-slate-50/70 p-2 text-center shadow-xs">
                   <Activity size={18} className="text-emerald-600" />
-                  <p className="mt-1 text-base font-black text-emerald-600">Ready</p>
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Status</p>
+                  <p className="mt-1 text-base font-black text-emerald-600">
+                    {targetStatus}
+                  </p>
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                    Status
+                  </p>
                 </div>
               </div>
             </div>
@@ -191,8 +226,12 @@ export default function Profile() {
             {/* 2. PERSONAL INFORMATION */}
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Personal Information</h3>
-                <p className="text-xs text-slate-400">Your basic account details.</p>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Personal Information
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Your basic account details.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -201,8 +240,12 @@ export default function Profile() {
                     <User size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Full Name</p>
-                    <p className="mt-0.5 text-sm font-bold text-slate-800 truncate">{formData.name}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Full Name
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold text-slate-800 truncate">
+                      {formData.name}
+                    </p>
                   </div>
                 </div>
 
@@ -211,8 +254,12 @@ export default function Profile() {
                     <Mail size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Email Address</p>
-                    <p className="mt-0.5 text-sm font-bold text-slate-800 truncate">{formData.email}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Email Address
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold text-slate-800 truncate">
+                      {formData.email}
+                    </p>
                   </div>
                 </div>
 
@@ -221,8 +268,12 @@ export default function Profile() {
                     <ShieldCheck size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Account Type</p>
-                    <p className="mt-0.5 text-sm font-bold text-slate-800">CANDIDATE</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Account Type
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold text-slate-800">
+                      CANDIDATE
+                    </p>
                   </div>
                 </div>
 
@@ -232,8 +283,12 @@ export default function Profile() {
                   </div>
                   <div className="flex min-w-0 flex-1 items-center justify-between">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Password</p>
-                      <p className="mt-0.5 text-sm font-bold text-slate-800 tracking-widest">••••••••</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Password
+                      </p>
+                      <p className="mt-0.5 text-sm font-bold text-slate-800 tracking-widest">
+                        ••••••••
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -249,8 +304,12 @@ export default function Profile() {
                     <Calendar size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Last Entry Date</p>
-                    <p className="mt-0.5 text-sm font-bold text-slate-800">11/8/2026</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Last Active
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold text-slate-800">
+                      Today
+                    </p>
                   </div>
                 </div>
               </div>
@@ -269,8 +328,12 @@ export default function Profile() {
                     <Building2 size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">College</p>
-                    <p className="mt-0.5 text-sm font-bold text-slate-800 truncate">{formData.college}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      College
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold text-slate-800 truncate">
+                      {formData.college}
+                    </p>
                   </div>
                 </div>
 
@@ -279,8 +342,12 @@ export default function Profile() {
                     <GraduationCap size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Degree</p>
-                    <p className="mt-0.5 text-sm font-bold text-slate-800">{formData.degree}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Degree
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold text-slate-800">
+                      {formData.degree}
+                    </p>
                   </div>
                 </div>
 
@@ -289,8 +356,12 @@ export default function Profile() {
                     <Calendar size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Graduation Year</p>
-                    <p className="mt-0.5 text-sm font-bold text-slate-800">{formData.graduationYear}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Graduation Year
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold text-slate-800">
+                      {formData.graduationYear}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -300,8 +371,12 @@ export default function Profile() {
             <div className="space-y-4 border-t border-slate-100 pt-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">Technical Skills</h3>
-                  <p className="text-xs text-slate-400">Technologies and skills in your profile.</p>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Technical Skills
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Technologies and skills in your profile.
+                  </p>
                 </div>
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                   <Code2 size={16} />
@@ -323,8 +398,12 @@ export default function Profile() {
             {/* 5. ADDITIONAL INFORMATION SECTION */}
             <div className="space-y-4 border-t border-slate-100 pt-8">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Additional Information</h3>
-                <p className="text-xs text-slate-400">Other information in your profile.</p>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Additional Information
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Other information in your profile.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -333,8 +412,12 @@ export default function Profile() {
                     <User size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Gender</p>
-                    <p className="mt-0.5 text-sm font-bold text-slate-800">{formData.gender}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Gender
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold text-slate-800">
+                      {formData.gender}
+                    </p>
                   </div>
                 </div>
 
@@ -343,8 +426,12 @@ export default function Profile() {
                     <Briefcase size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Experience</p>
-                    <p className="mt-0.5 text-sm font-bold text-slate-800">{formData.experience}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Experience
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold text-slate-800">
+                      {formData.experience}
+                    </p>
                   </div>
                 </div>
 
@@ -353,8 +440,12 @@ export default function Profile() {
                     <Building2 size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Department</p>
-                    <p className="mt-0.5 text-sm font-bold text-slate-800">{formData.department}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Department
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold text-slate-800">
+                      {formData.department}
+                    </p>
                   </div>
                 </div>
 
@@ -363,18 +454,21 @@ export default function Profile() {
                     <Calendar size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Profile Status</p>
-                    <p className="mt-0.5 text-sm font-bold text-slate-800">Active</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Profile Status
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold text-slate-800">
+                      Active
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>
 
-      {/* EDIT PROFILE MODAL */}
+      {/* EDIT MODAL */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8">
@@ -408,13 +502,13 @@ export default function Profile() {
                     type="email"
                     name="email"
                     value={formData.email}
-                    onChange={handleInputChange}
-                    className="mt-1 w-full rounded-xl border border-slate-200 p-2.5 text-xs font-medium focus:border-blue-500 focus:outline-none"
+                    disabled
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-xs font-medium text-slate-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700">College / University</label>
+                  <label className="text-xs font-bold text-slate-700">College</label>
                   <input
                     type="text"
                     name="college"
@@ -483,7 +577,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Edit Skills */}
+              {/* Skills Editor */}
               <div className="pt-2">
                 <label className="text-xs font-bold text-slate-700">Technical Skills</label>
                 <div className="mt-1 flex gap-2">
