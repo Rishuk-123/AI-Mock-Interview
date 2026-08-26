@@ -24,12 +24,12 @@ export default function InterviewResults() {
   const savedToStorageRef = useRef(false);
 
   const user = useAuthStore((state) => state.user);
-  const userId = user?._id || user?.id || user?.email || "anonymous";
-
   const getInterviewById = useInterviewStore((state) => state.getInterviewById);
+  const addInterviewToStore = useInterviewStore((state) => state.addInterview);
+
   const savedSession = typeof getInterviewById === "function" && id ? getInterviewById(id) : null;
 
-  // Read data passed from History navigation or Zustand state
+  // Read data passed from interview session
   const answers = location.state?.answers || savedSession?.answers || [];
   const questions = location.state?.questions || savedSession?.questions || [];
   const setupConfig = location.state?.setupConfig || savedSession?.setupConfig || {
@@ -37,16 +37,14 @@ export default function InterviewResults() {
     difficulty: "Medium",
   };
 
-  // Preload state if evaluation was already passed from History
   const preloadedEvaluation = location.state?.evaluation || savedSession?.evaluation || null;
   const [evaluation, setEvaluation] = useState(preloadedEvaluation);
   const [loading, setLoading] = useState(!preloadedEvaluation);
 
-  // Local calculation helper for immediate fallback rendering
   const generateLocalFallbackScore = (questionsList, answersList) => {
     const validAnswers = answersList.filter((a) => a && typeof a === "string" && a.trim().length > 10);
     const ratio = questionsList.length > 0 ? validAnswers.length / questionsList.length : 0;
-    const estimatedScore = Math.round(ratio * 85);
+    const estimatedScore = Math.max(50, Math.round(ratio * 85));
 
     return {
       score: estimatedScore,
@@ -90,7 +88,6 @@ export default function InterviewResults() {
         if (response.ok && data.success && data.evaluation) {
           setEvaluation(data.evaluation);
         } else {
-          console.warn("API returned non-200 evaluation, using fallback:", data);
           setEvaluation(generateLocalFallbackScore(questions, answers));
         }
       } catch (error) {
@@ -108,14 +105,17 @@ export default function InterviewResults() {
     }
   }, [preloadedEvaluation, questions, answers, setupConfig.role]);
 
-  // Persist session into user-specific localStorage key
+  // Robust Save Effect
   useEffect(() => {
     if (loading || !evaluation || savedToStorageRef.current) return;
     savedToStorageRef.current = true;
 
+    // Determine current user identifier reliably
+    const activeEmail = user?.email || JSON.parse(localStorage.getItem("auth-storage") || "{}")?.state?.user?.email || "anonymous";
+
     const sessionEntry = {
       id: id || `interview_${Date.now()}`,
-      userId,
+      userEmail: activeEmail,
       role: setupConfig.role || "Software Developer",
       difficulty: setupConfig.difficulty || "Medium",
       date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
@@ -146,11 +146,17 @@ export default function InterviewResults() {
       },
     };
 
-    const userKey = `recent_interviews_${userId}`;
-    const existing = JSON.parse(localStorage.getItem(userKey) || "[]");
-    const filtered = existing.filter((item) => item.id !== sessionEntry.id);
-    localStorage.setItem(userKey, JSON.stringify([sessionEntry, ...filtered]));
-  }, [loading, evaluation, id, setupConfig, questions, answers, userId]);
+    // 1. Save into user-scoped localStorage key
+    const userStorageKey = `recent_interviews_${activeEmail}`;
+    const existingUserList = JSON.parse(localStorage.getItem(userStorageKey) || "[]");
+    const updatedList = [sessionEntry, ...existingUserList.filter((item) => item.id !== sessionEntry.id)];
+    localStorage.setItem(userStorageKey, JSON.stringify(updatedList));
+
+    // 2. Add to Zustand store if action exists
+    if (typeof addInterviewToStore === "function") {
+      addInterviewToStore(sessionEntry);
+    }
+  }, [loading, evaluation, id, setupConfig, questions, answers, user, addInterviewToStore]);
 
   const score = evaluation?.score ?? 0;
   const focusAreas = evaluation?.focusAreas || ["Provide more detail in your answers", "Focus on technical depth"];
@@ -164,7 +170,6 @@ export default function InterviewResults() {
   const status = getProgressStatus(score);
   const validAnswersCount = answers.filter((a) => a && typeof a === "string" && a.trim().length > 3).length;
 
-  // Isolated PDF Download via hidden IFrame
   const handleDownloadPDF = () => {
     const reportElement = document.getElementById("interview-report-content");
     if (!reportElement) return;
@@ -223,7 +228,6 @@ export default function InterviewResults() {
       <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-12">
         <div className="mx-auto max-w-4xl px-5 py-8 sm:px-7 lg:px-8">
           
-          {/* ISOLATED REPORT CONTAINER */}
           <div id="interview-report-content" className="space-y-6">
             
             {/* HEADER CARD */}
@@ -243,7 +247,6 @@ export default function InterviewResults() {
                   </div>
                 </div>
 
-                {/* ACTION BUTTONS */}
                 <div className="flex items-center gap-3 no-print">
                   <button
                     type="button"
@@ -293,7 +296,7 @@ export default function InterviewResults() {
               </div>
             </div>
 
-            {/* PROGRESS GRAPH & STATISTICS CARD */}
+            {/* PROGRESS GRAPH CARD */}
             <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 font-extrabold text-slate-900 text-base">
@@ -366,7 +369,7 @@ export default function InterviewResults() {
               )}
             </div>
 
-            {/* QUESTION BREAKDOWN WITH AI FEEDBACK */}
+            {/* QUESTION BREAKDOWN */}
             <div className="space-y-6">
               <h2 className="text-lg font-extrabold text-slate-900">Detailed Question Responses</h2>
               {questions.map((q, idx) => {
@@ -424,7 +427,6 @@ export default function InterviewResults() {
 
           </div>
 
-          {/* BOTTOM ACTIONS */}
           <div className="mt-8 flex items-center justify-between gap-4 no-print">
             <button
               type="button"
