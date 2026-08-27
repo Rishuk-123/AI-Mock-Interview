@@ -27,6 +27,9 @@ import useAuthStore from "../store/authStore";
 export default function Profile() {
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token) || localStorage.getItem("token");
+  const updateProfile = useAuthStore((state) => state.updateProfile);
+
+  const displayName = user?.fullName || user?.name || "Candidate";
 
   const userEmail = useMemo(() => {
     return (
@@ -42,29 +45,22 @@ export default function Profile() {
   const [copied, setCopied] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Profile Form State initialized directly from user store
+  // Profile Form State dynamically populated from the logged-in user object
   const [formData, setFormData] = useState({
-    name: user?.name || "Khushi",
+    fullName: displayName,
     email: userEmail,
-    college: user?.college || "NIT Jalandhar",
-    degree: user?.degree || "B.Tech",
-    department: user?.department || "Information Technology",
-    graduationYear: user?.graduationYear || "2028",
-    gender: user?.gender || "Female",
+    college: user?.college || "Not Specified",
+    degree: user?.degree || "Not Specified",
+    department: user?.department || "Not Specified",
+    graduationYear: user?.graduationYear ? String(user.graduationYear) : "N/A",
+    gender: user?.gender || "Not Specified",
     experience: user?.experience || "Fresher",
-    skills: user?.skills || [
-      "HTML",
-      "CSS",
-      "JAVASCRIPT",
-      "C++",
-      "NODE.JS",
-      "REACT",
-    ],
+    skills: Array.isArray(user?.skills) && user.skills.length > 0 ? user.skills : ["GENERAL"],
   });
 
   const [newSkillInput, setNewSkillInput] = useState("");
 
-  // Load account-specific interview records
+  // Fetch account-specific interview history
   useEffect(() => {
     let isMounted = true;
 
@@ -125,7 +121,6 @@ export default function Profile() {
     };
   }, [userEmail, token]);
 
-  // Dynamic calculations per account
   const totalInterviews = interviews.length;
 
   const validScores = interviews
@@ -178,15 +173,15 @@ export default function Profile() {
 
   const handleOpenEditModal = () => {
     setFormData({
-      name: user?.name || formData.name,
+      fullName: user?.fullName || user?.name || "",
       email: user?.email || userEmail,
-      college: user?.college || formData.college,
-      degree: user?.degree || formData.degree,
-      department: user?.department || formData.department,
-      graduationYear: user?.graduationYear || formData.graduationYear,
-      gender: user?.gender || formData.gender,
-      experience: user?.experience || formData.experience,
-      skills: user?.skills || formData.skills,
+      college: user?.college || "",
+      degree: user?.degree || "",
+      department: user?.department || "",
+      graduationYear: user?.graduationYear ? String(user.graduationYear) : "",
+      gender: user?.gender || "Female",
+      experience: user?.experience || "Fresher",
+      skills: Array.isArray(user?.skills) && user.skills.length > 0 ? user.skills : [],
     });
     setIsEditModalOpen(true);
   };
@@ -194,16 +189,20 @@ export default function Profile() {
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-      if (token) {
-        await fetch(`${baseUrl}/api/users/profile`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        });
+      if (typeof updateProfile === "function") {
+        await updateProfile(formData);
+      } else {
+        const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+        if (token) {
+          await fetch(`${baseUrl}/api/users/profile`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(formData),
+          });
+        }
       }
     } catch (err) {
       console.warn("Failed to persist profile to server:", err);
@@ -244,7 +243,7 @@ export default function Profile() {
               {/* Left: Avatar + Info */}
               <div className="flex items-center gap-5">
                 <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-3xl font-black text-white shadow-lg shadow-blue-500/20 ring-4 ring-blue-50">
-                  {formData.name ? formData.name.charAt(0).toUpperCase() : "U"}
+                  {formData.fullName ? formData.fullName.charAt(0).toUpperCase() : "U"}
                   <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white ring-2 ring-white">
                     <CheckCircle2 size={14} />
                   </span>
@@ -253,7 +252,7 @@ export default function Profile() {
                 <div>
                   <div className="flex items-center gap-2.5">
                     <h2 className="text-2xl font-black text-slate-900">
-                      {formData.name}
+                      {formData.fullName}
                     </h2>
                     <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700">
                       <Sparkles size={12} /> Candidate
@@ -321,7 +320,7 @@ export default function Profile() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Full Name</p>
-                    <p className="mt-0.5 text-sm font-bold text-slate-800 truncate">{formData.name}</p>
+                    <p className="mt-0.5 text-sm font-bold text-slate-800 truncate">{formData.fullName}</p>
                   </div>
                 </div>
 
@@ -354,16 +353,6 @@ export default function Profile() {
                       <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Password</p>
                       <p className="mt-0.5 text-sm font-bold text-slate-800 tracking-widest">••••••••</p>
                     </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 transition hover:bg-slate-50 md:col-span-2">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                    <Calendar size={18} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Account Status</p>
-                    <p className="mt-0.5 text-sm font-bold text-slate-800">Active User</p>
                   </div>
                 </div>
               </div>
@@ -508,8 +497,8 @@ export default function Profile() {
                   <label className="text-xs font-bold text-slate-700">Full Name</label>
                   <input
                     type="text"
-                    name="name"
-                    value={formData.name}
+                    name="fullName"
+                    value={formData.fullName}
                     onChange={handleInputChange}
                     className="mt-1 w-full rounded-xl border border-slate-200 p-2.5 text-xs font-medium focus:border-blue-500 focus:outline-none"
                   />
@@ -521,8 +510,8 @@ export default function Profile() {
                     type="email"
                     name="email"
                     value={formData.email}
-                    onChange={handleInputChange}
-                    className="mt-1 w-full rounded-xl border border-slate-200 p-2.5 text-xs font-medium focus:border-blue-500 focus:outline-none"
+                    disabled
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-100 p-2.5 text-xs font-medium text-slate-500 cursor-not-allowed"
                   />
                 </div>
 
@@ -578,8 +567,8 @@ export default function Profile() {
                     onChange={handleInputChange}
                     className="mt-1 w-full rounded-xl border border-slate-200 p-2.5 text-xs font-medium focus:border-blue-500 focus:outline-none"
                   >
-                    <option value="Female">Female</option>
                     <option value="Male">Male</option>
+                    <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
@@ -596,7 +585,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Edit Skills */}
+              {/* Skills */}
               <div className="pt-2">
                 <label className="text-xs font-bold text-slate-700">Technical Skills</label>
                 <div className="mt-1 flex gap-2">
