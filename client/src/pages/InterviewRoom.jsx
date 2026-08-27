@@ -9,6 +9,9 @@ import {
   Loader2,
   Volume2,
   ArrowLeft,
+  Coins,
+  AlertTriangle,
+  CreditCard,
 } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
 import useInterviewStore from "../store/useInterviewStore";
@@ -19,7 +22,12 @@ export default function InterviewRoom() {
   const { id } = useParams();
   const location = useLocation();
   const saveInterview = useInterviewStore((state) => state.saveInterview);
+
+  const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token) || localStorage.getItem("token");
+  const deductCredit = useAuthStore((state) => state.deductCredit);
+
+  const currentCredits = typeof user?.credits === "number" ? user.credits : 100;
 
   const passedQuestions = useMemo(() => {
     return location.state?.questions || [];
@@ -45,6 +53,7 @@ export default function InterviewRoom() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [loading, setLoading] = useState(passedQuestions.length === 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLowCreditModal, setShowLowCreditModal] = useState(false);
 
   const recognitionRef = useRef(null);
   const baseTextRef = useRef("");
@@ -140,7 +149,7 @@ export default function InterviewRoom() {
     };
   }, [passedQuestions, role, difficulty, type, token]);
 
-  // Audio side-effects only (no synchronous setState)
+  // Audio side-effects
   useEffect(() => {
     if (questions.length > 0 && questions[currentIndex]) {
       baseTextRef.current = answers[currentIndex] || "";
@@ -235,8 +244,21 @@ export default function InterviewRoom() {
 
     const targetId = id || Date.now().toString();
 
+    // Final question submission
     if (currentIndex === questions.length - 1) {
+      // Check if user has sufficient credits
+      if (currentCredits < 30) {
+        setShowLowCreditModal(true);
+        return;
+      }
+
       setIsSubmitting(true);
+
+      // Deduct 30 credits locally
+      if (typeof deductCredit === "function") {
+        deductCredit(30);
+      }
+
       let evaluatedData = null;
 
       try {
@@ -253,9 +275,18 @@ export default function InterviewRoom() {
             role,
           }),
         });
+
         const evalJson = await evalRes.json();
+
         if (evalRes.ok && evalJson.success) {
           evaluatedData = evalJson.evaluation;
+
+          // Sync returned credits from backend if present
+          if (evalJson.credits !== undefined) {
+            useAuthStore.setState((state) => ({
+              user: { ...state.user, credits: evalJson.credits },
+            }));
+          }
         }
       } catch (err) {
         console.warn("AI Evaluation fetch failed:", err);
@@ -311,6 +342,7 @@ export default function InterviewRoom() {
     <MainLayout>
       <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+          
           {/* Header */}
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
@@ -318,7 +350,7 @@ export default function InterviewRoom() {
                 type="button"
                 onClick={() => {
                   if (window.speechSynthesis) window.speechSynthesis.cancel();
-                  navigate("/history");
+                  navigate("/dashboard");
                 }}
                 className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 cursor-pointer"
               >
@@ -334,16 +366,24 @@ export default function InterviewRoom() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                if (window.speechSynthesis) window.speechSynthesis.cancel();
-                navigate("/history");
-              }}
-              className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-100 cursor-pointer"
-            >
-              End Interview
-            </button>
+            <div className="flex items-center gap-3">
+              {/* Live Credit Display */}
+              <div className="flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
+                <Coins size={15} className="text-amber-600" />
+                <span>{currentCredits} Credits</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.speechSynthesis) window.speechSynthesis.cancel();
+                  navigate("/dashboard");
+                }}
+                className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 cursor-pointer"
+              >
+                End Interview
+              </button>
+            </div>
           </div>
 
           {/* Main Grid */}
@@ -442,7 +482,7 @@ export default function InterviewRoom() {
                     </>
                   ) : isLastQuestion ? (
                     <>
-                      Submit Interview <CheckCircle2 size={16} />
+                      Submit Interview (Uses 30 Credits) <CheckCircle2 size={16} />
                     </>
                   ) : (
                     <>
@@ -455,6 +495,56 @@ export default function InterviewRoom() {
           </div>
         </div>
       </div>
+
+      {/* INSUFFICIENT CREDITS MODAL */}
+      {showLowCreditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-600 shadow-sm">
+              <AlertTriangle size={28} />
+            </div>
+
+            <h3 className="mt-4 text-xl font-extrabold text-slate-900">
+              Not Enough Credits
+            </h3>
+
+            <p className="mt-2 text-xs leading-relaxed text-slate-600">
+              You currently have <span className="font-bold text-slate-900">{currentCredits} credits</span>. 
+              Submitting and evaluating this mock interview requires at least <span className="font-bold text-blue-600">30 credits</span>.
+            </p>
+
+            <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-left">
+              <div className="flex items-center gap-2 text-xs font-bold text-blue-900">
+                <Coins size={16} className="text-blue-600" />
+                <span>Need more credits to continue?</span>
+              </div>
+              <p className="mt-1 text-[11px] text-blue-700">
+                Top up your credits to unlock unlimited AI feedback, resume matching, and realistic mock interviews.
+              </p>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowLowCreditModal(false)}
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLowCreditModal(false);
+                  navigate("/dashboard");
+                }}
+                className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-500 cursor-pointer"
+              >
+                <CreditCard size={14} /> Buy Credits / Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 }
