@@ -8,7 +8,7 @@ An **end-to-end MERN-stack web application** designed to help job candidates pre
 
 ### 🎤 1. AI Mock Interview Room
 
-* Conduct **interactive technical mock interviews** directly in the browser.
+* Conduct interactive technical mock interviews directly in the browser.
 * Supports **real-time speech recognition** using the Web Speech API.
 * Provides **text-input fallback** when speech recognition is unavailable.
 * Role-specific question banks for:
@@ -16,7 +16,7 @@ An **end-to-end MERN-stack web application** designed to help job candidates pre
   * Frontend Development
   * Backend Development
   * Full-Stack Development
-* Smooth question navigation with **instant answer evaluation**.
+* Smooth question navigation with instant answer evaluation.
 * Automatically records interview performance and scores.
 
 ### 📄 2. Multi-Factor ATS Resume Analyzer
@@ -56,6 +56,7 @@ Users can maintain a personalized candidate profile containing:
 * Target job role
 * Technical skills
 * Interview preparation preferences
+* Current interview credit balance
 
 Protected routes ensure that authenticated users can access candidate-specific features.
 
@@ -69,184 +70,63 @@ The application uses:
 * Express authentication middleware
 * MongoDB-based user management
 
----
+### 💳 6. Credit-Based Interview System
 
-# 🛠️ Tech Stack
-
-## Frontend
-
-* **React 18**
-* **Vite**
-* **Tailwind CSS**
-* **Lucide React**
-* **Zustand**
-* **React Router DOM v6**
-* **pdfjs-dist**
-* Web Speech API
-
-## Backend
-
-* **Node.js**
-* **Express.js**
-* **MongoDB**
-* **Mongoose**
-* **JSON Web Tokens (JWT)**
-* **Bcrypt**
+* Users start with **100 free interview credits** upon registration.
+* Generating and submitting an interview session costs **50 credits**.
+* Automatic credit balance validation blocks interview creation if credits are insufficient.
+* Credit balance is deducted when an interview session is generated/submitted.
+* Live credit balance indicators are displayed in the navbar and interview setup screens.
+* Credit balance is stored with the authenticated user's data.
 
 ---
 
-# 📁 Project Structure
+## 🎯 Core Modules
 
-```text
-AI_MOCK/
-│
-├── README.md
-│
-├── client/                         # React + Vite Frontend
-│   ├── public/
-│   └── src/
-│       ├── components/             # Navbar, Protected Routes, Modals
-│       ├── layouts/                # Main Layout
-│       ├── pages/                  # Application Pages
-│       │   ├── History/
-│       │   ├── InterviewRoom/
-│       │   ├── Profile/
-│       │   ├── Results/
-│       │   └── Resume/
-│       ├── store/                  # Zustand State Management
-│       │   ├── authStore.js
-│       │   └── useInterviewStore.js
-│       ├── App.jsx                 # Routing Configuration
-│       └── main.jsx                # Application Entry Point
-│
-├── server/                         # Express Backend
-│   ├── config/                     # Database & Environment Config
-│   ├── controllers/                # Business Logic
-│   ├── middleware/                 # JWT & Error Handling
-│   ├── models/                     # Mongoose Schemas
-│   ├── routes/                     # API Routes
-│   ├── services/                   # Helper Services
-│   ├── uploads/                    # Temporary File Uploads
-│   ├── utils/                      # Utility Functions
-│   ├── .env
-│   ├── .env.example
-│   ├── app.js                      # Express Configuration
-│   └── server.js                   # Server Entry Point
-│
-└──
-```
+| Module                 | Purpose                                                            |
+| ---------------------- | ------------------------------------------------------------------ |
+| **Authentication**     | Secure user registration, login, and initial 100-credit allocation |
+| **Credit System**      | Enforces 50-credit cost per interview session and manages balance  |
+| **Mock Interview**     | Role-based technical interview practice with balance validation    |
+| **Speech Interaction** | Voice-based question reading and answer transcription              |
+| **Resume Analyzer**    | Automated ATS compatibility evaluation and keyword extraction      |
+| **Profile**            | Candidate information, active credit balance, and skill management |
+| **Results**            | Instant AI-driven scoring and detailed answer feedback             |
+| **History**            | Previous interview records and performance analytics               |
+| **Analytics**          | Track preparation progress                                         |
 
 ---
 
-# 🚀 Getting Started
-
-## Prerequisites
-
-Make sure you have the following installed:
-
-* **Node.js v18 or higher**
-* **MongoDB** — Local MongoDB or MongoDB Atlas
-* **Git**
-* Modern web browser with Web Speech API support
-
----
-
-## 1. Clone the Repository
-
-```bash
-git clone https://github.com/Rishuk-123/AI_MOCK.git
-cd AI_MOCK
-```
-
----
-
-## 2. Backend Setup
-
-Navigate to the server directory:
-
-```bash
-cd server
-npm install
-```
-
-Create a `.env` file inside the `server/` directory:
-
-```env
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
-```
-
-Start the backend server:
-
-```bash
-npm run dev
-```
-
-Or:
-
-```bash
-node server.js
-```
-
-The backend will run on:
-
-```text
-http://localhost:5000
-```
-
----
-
-## 3. Frontend Setup
-
-Open a **new terminal** and navigate to the client directory:
-
-```bash
-cd client
-npm install
-```
-
-Start the Vite development server:
-
-```bash
-npm run dev
-```
-
----
-
-## 4. Open the Application
-
-Open your browser and visit:
-
-```text
-http://localhost:5173
-```
-
----
-
-# 🔄 Application Workflow
+## 🔄 Application Workflow
 
 ```text
                 ┌──────────────────────┐
-                │       User           │
+                │        User          │
                 └──────────┬───────────┘
                            │
                            ▼
                 ┌──────────────────────┐
-                │   JWT Authentication │
+                │  JWT Authentication  │
                 └──────────┬───────────┘
                            │
               ┌────────────┴────────────┐
               ▼                         ▼
      ┌─────────────────┐       ┌──────────────────┐
-     │ Mock Interview  │       │ Resume Analyzer  │
-     └────────┬────────┘       └─────────┬────────┘
+     │  Credit Check   │       │ Resume Analyzer  │
+     │  (≥ 50 Credits) │       └─────────┬────────┘
+     └────────┬────────┘                 │
+              │                          ▼
+              ▼                 PDF Text Extraction
+     ┌─────────────────┐                 │
+     │ Mock Interview  │                 ▼
+     │ (-50 Credits)   │         ATS Score Analysis
+     └────────┬────────┘                 │
               │                          │
-              ▼                          ▼
-     Questions + Speech          PDF Text Extraction
+              ▼                          │
+     Questions + Speech                  │
               │                          │
-              ▼                          ▼
-       Answer Evaluation          ATS Score Analysis
+              ▼                          │
+      Answer Evaluation                  │
               │                          │
               └────────────┬─────────────┘
                            ▼
@@ -260,24 +140,41 @@ http://localhost:5173
                 └──────────────────────┘
 ```
 
+### 💳 Credit Flow
+
+```text
+New User
+   │
+   ▼
+100 Free Credits
+   │
+   ▼
+Start Interview
+   │
+   ▼
+Check Balance
+   │
+   ├─────────────── < 50 ───────────────► ❌ Interview Blocked
+   │
+   ▼
+Balance ≥ 50
+   │
+   ▼
+Interview Generated
+   │
+   ▼
+50 Credits Deducted
+   │
+   ▼
+Interview Session
+   │
+   ▼
+Results + History
+```
+
 ---
 
-# 🎯 Core Modules
-
-| Module                 | Purpose                                    |
-| ---------------------- | ------------------------------------------ |
-| **Authentication**     | Secure user registration and login         |
-| **Mock Interview**     | Role-based technical interview practice    |
-| **Speech Interaction** | Voice-based question/answer interaction    |
-| **Resume Analyzer**    | Automated ATS compatibility evaluation     |
-| **Profile**            | Candidate information and skill management |
-| **Results**            | Interview performance and scoring          |
-| **History**            | Previous interview sessions and reviews    |
-| **Analytics**          | Track preparation progress                 |
-
----
-
-# 🔒 Security
+## 🔒 Security
 
 The application implements several security mechanisms:
 
@@ -287,27 +184,55 @@ The application implements several security mechanisms:
 * Authentication middleware on backend APIs
 * Environment variables for sensitive configuration
 * MongoDB-based persistent user data
+* Server-side authentication and authorization
+* Credit balance validation before interview creation
+* Credit deduction controlled through authenticated backend operations
 
 > **Important:** Never commit your `.env` file or expose your MongoDB URI and JWT secret publicly.
 
 ---
 
-# 💡 Why This Project?
+## 📌 Project Highlights
 
-The application combines **interview preparation, resume optimization, and performance tracking** into a single platform.
+This project demonstrates practical experience with:
 
-Instead of using separate tools for resume analysis and interview practice, candidates can:
-
-**Upload Resume → Check ATS Score → Practice Interview → Get Results → Track Progress**
-
-This makes the project useful as a practical **full-stack MERN application** demonstrating frontend development, backend APIs, authentication, database integration, browser APIs, PDF processing, and state management.
+* Full-stack **MERN development**
+* REST API development
+* JWT authentication and authorization
+* Password hashing with Bcrypt
+* MongoDB database integration
+* Mongoose data modeling
+* React component architecture
+* Client-side routing
+* Global state management with Zustand
+* Browser Web Speech API
+* Client-side PDF processing
+* Resume parsing and ATS scoring
+* Persistent local state
+* **Credit-based resource management**
+* **Balance validation and transaction handling**
+* Responsive UI development with Tailwind CSS
 
 ---
 
-# 👨‍💻 Author
+## 💡 Why This Project?
+
+The application combines **interview preparation, resume optimization, credit management, and performance tracking** into a single platform.
+
+Instead of using separate tools for resume analysis and interview practice, candidates can:
+
+**Upload Resume → Check ATS Score → Practice Interview → Spend Credits → Get Results → Track Progress**
+
+The credit-based system introduces a practical resource-management mechanism where users receive **100 initial credits**, while each interview session consumes **50 credits**.
+
+This makes the project useful as a practical full-stack MERN application demonstrating frontend development, backend APIs, authentication, database integration, browser APIs, PDF processing, state management, and resource management.
+
+---
+
+## 👨‍💻 Author
 
 **Rishu Kesharwani**
 
 GitHub: `Rishuk-123`
 
-Repository: `AI_MOCK`
+Repository: `AI_MOCK_INTERVIEW`
