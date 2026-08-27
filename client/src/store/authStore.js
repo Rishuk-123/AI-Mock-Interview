@@ -93,8 +93,23 @@ const useAuthStore = create((set) => ({
     }
   },
 
-  // Deduct 30 credits per interview
-  deductCredit: (amount = 30) => {
+  updateProfile: async (data) => {
+    set({ loading: true });
+    try {
+      const res = await api.put("/users/profile", data);
+      set((state) => ({
+        user: res.data.user || { ...state.user, ...data },
+        loading: false,
+      }));
+      return res.data;
+    } catch (err) {
+      set({ loading: false });
+      throw err.response?.data || { message: "Failed to update profile" };
+    }
+  },
+
+  // Deduct 50 credits per interview session
+  deductCredit: (amount = 50) => {
     set((state) => {
       if (!state.user) return state;
 
