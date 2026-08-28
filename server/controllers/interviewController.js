@@ -1,4 +1,8 @@
+// server/controllers/interviewController.js
+
+import mongoose from "mongoose";
 import Interview from "../models/Interview.js";
+import User from "../models/User.js";
 
 // Helper function to extract JSON reliably from Gemini text responses
 const extractJSON = (text) => {
@@ -23,12 +27,11 @@ const callGeminiAPI = async (prompt) => {
     throw new Error("GEMINI_API_KEY is not defined in server/.env");
   }
 
-  // Model fallback list
   const models = [
     "gemini-2.5-flash",
     "gemini-2.0-flash",
     "gemini-1.5-flash-latest",
-    "gemini-1.5-flash"
+    "gemini-1.5-flash",
   ];
 
   let lastError = null;
@@ -101,12 +104,14 @@ Example:
 
     return res.status(200).json({
       success: true,
-      questions: Array.isArray(questions) ? questions : [
-        `Explain key technical concepts for a ${role}.`,
-        `How do you handle debugging and optimization?`,
-        `Describe a challenging problem you solved.`,
-        `How do you structure maintainable code?`
-      ],
+      questions: Array.isArray(questions)
+        ? questions
+        : [
+            `Explain key technical concepts for a ${role}.`,
+            `How do you handle debugging and optimization?`,
+            `Describe a challenging problem you solved.`,
+            `How do you structure maintainable code?`,
+          ],
     });
   } catch (error) {
     console.error("Generate questions error:", error);
@@ -119,12 +124,31 @@ Example:
 };
 
 // ============================================================================
-// 2. FULL INTERVIEW EVALUATION & SCORING
+// 2. FULL INTERVIEW EVALUATION, SCORING & CREDIT DEDUCTION
 // ============================================================================
 export const evaluateFullInterview = async (req, res) => {
   const { questions = [], answers = [], role = "Software Developer" } = req.body;
+  const userId = req.user?._id || req.user?.id;
 
   try {
+    let updatedCredits;
+
+    // Verify and deduct 50 credits if user is authenticated
+    if (userId) {
+      const user = await User.findById(userId);
+      if (user) {
+        if ((user.credits ?? 100) < 50) {
+          return res.status(403).json({
+            success: false,
+            message: "Insufficient credits. At least 50 credits are required to evaluate an interview.",
+          });
+        }
+        user.credits = Math.max(0, (user.credits ?? 100) - 50);
+        await user.save();
+        updatedCredits = user.credits;
+      }
+    }
+
     const formattedQnA = questions
       .map(
         (q, i) =>
@@ -168,7 +192,7 @@ Return ONLY a valid JSON object matching this schema:
       evaluation = await callGeminiAPI(prompt);
     } catch (apiErr) {
       console.warn("AI evaluation fallback activated:", apiErr.message);
-      
+
       const answeredCount = answers.filter(
         (a) => a && typeof a === "string" && a.trim().length > 15
       ).length;
@@ -179,7 +203,7 @@ Return ONLY a valid JSON object matching this schema:
         level: scoreCalc >= 75 ? "Proficient" : scoreCalc >= 45 ? "Intermediate" : "Needs Improvement",
         focusAreas: [
           "Provide deeper architectural details with specific technical tools.",
-          "Elaborate on production debugging and error-handling edge cases."
+          "Elaborate on production debugging and error-handling edge cases.",
         ],
         feedback: questions.map((_, i) =>
           answers[i] && String(answers[i]).trim().length > 15
@@ -191,6 +215,7 @@ Return ONLY a valid JSON object matching this schema:
 
     return res.status(200).json({
       success: true,
+      credits: updatedCredits,
       evaluation,
     });
   } catch (error) {
@@ -208,85 +233,154 @@ Return ONLY a valid JSON object matching this schema:
 // ============================================================================
 export const createInterview = async (req, res) => {
   try {
-    const { role, company, interviewType, difficulty } = req.body;
+    const userId = req.user?._id || req.user?.id;
+    const { role, company, interviewType, difficulty, questions } = req.body;
+
     const interview = await Interview.create({
-      user: req.user.id,
+      user: userId,
+      userId: userId,
       role: role || "Software Developer",
       company: company || "",
       interviewType: interviewType || "Technical",
       difficulty: difficulty || "Medium",
+      questions: questions || [],
       status: "scheduled",
     });
-    res.status(201).json({ success: true, interview });
+
+    return res.status(201).json({ success: true, interview });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const getMyInterviews = async (req, res) => {
   try {
-    const interviews = await Interview.find({ user: req.user.id }).sort({ createdAt: -1 });
-    res.status(200).json({ success: true, interviews });
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "User not authenticated" });
+    }
+
+    const interviews = await Interview.find({
+      $or: [{ user: userId }, { userId: userId }],
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json({ success: true, interviews: interviews || [] });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Get my interviews error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const getInterviewById = async (req, res) => {
   try {
-    const interview = await Interview.findOne({ _id: req.params.id, user: req.user.id });
-    if (!interview) return res.status(404).json({ success: false, message: "Interview not found" });
-    res.status(200).json({ success: true, interview });
+    const { id } = req.params;
+
+    // Strict validation to prevent CastError crashes if non-ObjectId strings reach this handler
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid interview ID format: "${id}"`,
+      });
+    }
+
+    const userId = req.user?._id || req.user?.id;
+    const interview = await Interview.findOne({
+      _id: id,
+      $or: [{ user: userId }, { userId: userId }],
+    });
+
+    if (!interview) {
+      return res.status(404).json({ success: false, message: "Interview not found" });
+    }
+
+    return res.status(200).json({ success: true, interview });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Get interview by ID error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const startInterview = async (req, res) => {
   try {
-    const interview = await Interview.findOne({ _id: req.params.id, user: req.user.id });
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid interview ID" });
+    }
+
+    const userId = req.user?._id || req.user?.id;
+    const interview = await Interview.findOne({
+      _id: id,
+      $or: [{ user: userId }, { userId: userId }],
+    });
+
     if (!interview) return res.status(404).json({ success: false, message: "Interview not found" });
+
     interview.status = "in-progress";
     interview.startedAt = new Date();
     await interview.save();
-    res.status(200).json({ success: true, interview });
+
+    return res.status(200).json({ success: true, interview });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const submitAnswer = async (req, res) => {
   try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid interview ID" });
+    }
+
+    const userId = req.user?._id || req.user?.id;
     const { questionIndex, answer } = req.body;
-    const interview = await Interview.findOne({ _id: req.params.id, user: req.user.id });
+    const interview = await Interview.findOne({
+      _id: id,
+      $or: [{ user: userId }, { userId: userId }],
+    });
+
     if (!interview) return res.status(404).json({ success: false, message: "Interview not found" });
+
     if (questionIndex >= 0 && questionIndex < interview.questions.length) {
       interview.questions[questionIndex].answer = answer;
       await interview.save();
     }
-    res.status(200).json({ success: true, interview });
+
+    return res.status(200).json({ success: true, interview });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const evaluateInterviewAnswer = async (req, res) => {
   try {
-    res.status(200).json({ success: true, message: "Answer recorded." });
+    return res.status(200).json({ success: true, message: "Answer recorded." });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const finishInterview = async (req, res) => {
   try {
-    const interview = await Interview.findOne({ _id: req.params.id, user: req.user.id });
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid interview ID" });
+    }
+
+    const userId = req.user?._id || req.user?.id;
+    const interview = await Interview.findOne({
+      _id: id,
+      $or: [{ user: userId }, { userId: userId }],
+    });
+
     if (!interview) return res.status(404).json({ success: false, message: "Interview not found" });
+
     interview.status = "completed";
     interview.completedAt = new Date();
     await interview.save();
-    res.status(200).json({ success: true, interview });
+
+    return res.status(200).json({ success: true, interview });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

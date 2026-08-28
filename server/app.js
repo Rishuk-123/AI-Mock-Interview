@@ -4,15 +4,16 @@ import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 
-import connectDB from "./config/db.js"; // Database connection
+import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
+import resumeRoutes from "./routes/resumeRoutes.js";
 import paymentRoutes from "./routes/payment.js";
 
 const app = express();
 
-// Connect to MongoDB
+// Connect to MongoDB once on startup
 connectDB();
 
 // Security Headers
@@ -21,12 +22,12 @@ app.use(helmet());
 // Dynamic Cross-Origin Resource Sharing
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow non-browser requests (like curl or postman) or local development
+    // Allow non-browser requests (like curl/Postman) or local development
     if (!origin || origin.includes("localhost")) {
       return callback(null, true);
     }
 
-    // Allow configured CLIENT_URL or ANY Vercel deployment domain (*.vercel.app)
+    // Allow configured CLIENT_URL or any Vercel deployment domain (*.vercel.app)
     if (origin === process.env.CLIENT_URL || origin.endsWith(".vercel.app")) {
       return callback(null, true);
     }
@@ -38,7 +39,7 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-// Apply CORS globally (handles both standard requests AND preflight OPTIONS)
+// Apply CORS globally
 app.use(cors(corsOptions));
 
 // Logging Middleware
@@ -64,11 +65,12 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// API Routes (Mounted for both singular and plural paths to match frontend calls)
+// Mount All API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/interview", interviewRoutes);
 app.use("/api/interviews", interviewRoutes);
+app.use("/api/resume", resumeRoutes);
 app.use("/api/payment", paymentRoutes);
 
 // 404 Handler for undefined routes

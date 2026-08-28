@@ -23,8 +23,8 @@ router.post("/generate-questions", generateQuestions);
 router.post("/frontend-questions", generateQuestions);
 router.post("/backend-questions", generateQuestions);
 
-// Full interview analysis, scoring, and feedback generation
-router.post("/evaluate", evaluateFullInterview);
+// Full interview analysis, scoring, and credit deduction
+router.post("/evaluate", authMiddleware, evaluateFullInterview);
 
 // ============================================================================
 // 2. USER-SPECIFIC & STATIC GET/POST ROUTES (MUST BE ABOVE /:id)
@@ -33,12 +33,12 @@ router.post("/evaluate", evaluateFullInterview);
 // Create a new interview session
 router.post("/", authMiddleware, createInterview);
 
-// Fetch all interviews belonging to the logged-in user (root & /history)
-router.get("/", authMiddleware, getMyInterviews);
+// Fetch all interviews belonging to the logged-in user
 router.get("/history", authMiddleware, getMyInterviews);
+router.get("/", authMiddleware, getMyInterviews);
 
 // ============================================================================
-// 3. PARAMETERIZED ROUTES (MUST BE AT THE BOTTOM)
+// 3. PARAMETERIZED DYNAMIC ROUTES (MUST BE AT THE BOTTOM)
 // ============================================================================
 
 // Start an interview session
