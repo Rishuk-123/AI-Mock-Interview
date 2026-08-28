@@ -20,26 +20,28 @@ const extractJSON = (text) => {
   }
 };
 
-// Generic REST caller for Gemini with multiple model fallbacks
+// Generic REST caller for Gemini with multiple model and version fallbacks
 const callGeminiAPI = async (prompt) => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not defined in server/.env");
   }
 
-  const models = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-flash",
+  // Multi-tier model & endpoint fallback list
+  const attempts = [
+    { version: "v1beta", model: "gemini-1.5-flash" },
+    { version: "v1beta", model: "gemini-1.5-pro" },
+    { version: "v1beta", model: "gemini-2.0-flash" },
+    { version: "v1", model: "gemini-1.5-flash" },
+    { version: "v1", model: "gemini-1.5-pro" },
   ];
 
   let lastError = null;
 
-  for (const model of models) {
+  for (const { version, model } of attempts) {
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
